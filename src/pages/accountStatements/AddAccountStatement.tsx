@@ -90,6 +90,16 @@ const AddAccountStatement = () => {
   useEffect(() => {
     console.log(data);
     if (!params?.id) {
+      reset({
+        code: data?.code,
+        date: new Date(),
+        patches: [],
+        payments: [],
+        notes: '',
+        clientName: '',
+        phoneNumber: '',
+        address: '',
+      });
       setValue('code', data?.code);
       setValue('date', new Date());
     } else {

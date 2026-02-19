@@ -21,7 +21,7 @@ const Layout = () => {
 };
 
 const SuspenseWrapper = ({children}:{children:React.ReactNode}) => {
-  return <Suspense fallback={<Spin size="large" tip="Loading" fullscreen />}>{children}</Suspense>
+  return <Suspense fallback={<Spin size="large" tip="جاري التحميل..." fullscreen />}>{children}</Suspense>
 }
 
 const RouterContainer = () => {

@@ -85,7 +85,7 @@ const App: React.FC = () => {
           }}
           >
             <Flex justify="space-between" align="start">
-            <BreadcrumbComponent/>
+             <BreadcrumbComponent/>
              <ButtonComponent type='primary' className=' flex flex-row-reverse' icon={<LeftOutlined/>} text='رجوع' onClick={()=>goBack()}/>
             </Flex>
           <RouterContainer/>
