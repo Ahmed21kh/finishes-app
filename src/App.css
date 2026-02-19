@@ -1,0 +1,57 @@
+.react-tel-input .selected-flag .flag {
+    position: absolute;
+    top: 50%;
+    margin-top: -5px;
+    margin-right: 4px;
+}
+.react-tel-input .selected-flag .arrow {
+    position: relative;
+    top: 50%;
+    margin-top: -2px;
+    left: -23px !important;
+    right: auto;
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #555;
+}
+
+.printContent {
+    display: none;
+  }
+
+@media print {
+  .printContent {
+    display: block;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    padding: 10mm;
+    width: 100%;
+  }
+
+  .printContent * {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  @page {
+    size: Legal portrait;
+    margin: 10mm;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    font-size: 11px; /* Shrink if needed */
+  }
+    /* Optional: hide URL in footer */
+    a[href]:after {
+      content: "" !important;
+    }
+  
+    footer, header {
+      display: none !important;
+    }
+
+  }
