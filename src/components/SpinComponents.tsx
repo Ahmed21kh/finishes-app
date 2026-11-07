@@ -1,12 +1,22 @@
-import { Spin, SpinProps } from "antd"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Spin, SpinProps } from "antd";
+import React from "react";
 
-interface SpinCompProps extends SpinProps {
-    [key: string]: any;
+export interface SpinCompProps extends SpinProps {
+  [key: string]: any;
 }
-const SpinComponents = ({...reset}:SpinCompProps) => {
+
+export const SpinComponents: React.FC<SpinCompProps> = ({
+  tip = "جاري التحميل...",
+  className = "",
+  ...rest
+}) => {
   return (
-    <Spin {...reset}/>
-  )
-}
+    <div className="flex justify-center items-center py-6 w-full">
+      <Spin tip={tip} className={className} {...rest} />
+    </div>
+  );
+};
 
-export default SpinComponents
+export const SpinComponent = SpinComponents;
+export default SpinComponents;

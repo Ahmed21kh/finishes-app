@@ -1,202 +1,296 @@
-/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DeleteFilled, EditFilled, ExclamationCircleFilled, EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
-import { Flex, Input, InputNumber, Modal, Typography } from "antd"
-import ButtonComponent from "../../components/ButtonComponent"
-import TableComponent from "../../components/TableComponent"
-import { useNavigate } from "react-router-dom"
-import { useMutation, useQuery, useQueryClient } from "react-query"
-import { deleteapartmentApi, getAllapartments } from "../../apis/ApartmentsApi"
-import { useEffect, useState } from "react"
-import { toast } from "react-toastify"
+import {
+  DeleteFilled,
+  EditFilled,
+  EyeOutlined,
+  HomeOutlined,
+  PlusOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
+import { Input, InputNumber, Tooltip } from "antd";
+import ButtonComponent from "../../components/ButtonComponent";
+import TableComponent from "../../components/TableComponent";
+import PageHeader from "../../components/PageHeader";
+import FilterComponent from "../../components/FilterComponent";
+import useConfirmDialog from "../../hooks/useConfirmDialog";
+import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "react-query";
+import {
+  deleteapartmentApi,
+  getAllapartments,
+} from "../../apis/ApartmentsApi";
+import { useState } from "react";
+import { toast } from "react-toastify";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { useForm } from "react-hook-form"
-import FilterComponent from "../../components/FilterComponent"
-interface ApartmentsProps {
-    clientId: string | undefined;
+import { useForm } from "react-hook-form";
+
+export interface ApartmentsProps {
+  clientId: string | undefined;
 }
-const Apartments = ({clientId}:ApartmentsProps) => {
-    const {Title , Text} = Typography;
-    const  navigate  = useNavigate();
-    const [pageNumber, setpageNumber] = useState(1);
-    const [searchParams, setsearchParams] = useState({page:1, limit:10,client:clientId})
-    const queryapartment = useQueryClient()
-    const [modal, contextHolder] = Modal.useModal();
-  
-    const searchFilter = yup.object().shape({
-      name: yup.string().notRequired(),
-      code: yup.string().notRequired(),
-    });
-    const {
-      handleSubmit,
-      formState: { errors: errors },
-      reset,
-      control,
-    } = useForm({
-      resolver: yupResolver(searchFilter),
-    });
-  
-    const inputsArr = [
-      {
-        name: "code",
-        render: (field:any)=> <InputNumber prefix={<SearchOutlined className=" text-gray-400"/>}  status={errors.code&&'error'}  className=" w-full" size="large" placeholder="بحث بكود الشقة" {...field}/>,
-        xs:24,
-        lg:7
+
+export const Apartments = ({ clientId }: ApartmentsProps) => {
+  const navigate = useNavigate();
+  const [pageNumber, setPageNumber] = useState(1);
+  const [searchParams, setSearchParams] = useState({
+    page: 1,
+    limit: 10,
+    client: clientId,
+  });
+  const queryClient = useQueryClient();
+  const { confirm, contextHolder } = useConfirmDialog();
+
+  const searchFilter = yup.object().shape({
+    name: yup.string().notRequired(),
+    code: yup.string().notRequired(),
+  });
+
+  const {
+    handleSubmit,
+    formState: { errors },
+    reset,
+    control,
+  } = useForm({
+    resolver: yupResolver(searchFilter),
+  });
+
+  const inputsArr = [
+    {
+      name: "code",
+      render: (field: any) => (
+        <InputNumber
+          prefix={<SearchOutlined className="text-gray-400" />}
+          status={errors.code ? "error" : undefined}
+          className="w-full !rounded-xl"
+          size="large"
+          placeholder="بحث بكود الشقة"
+          {...field}
+        />
+      ),
+      xs: 24,
+      lg: 7,
+    },
+    {
+      name: "address",
+      render: (field: any) => (
+        <Input
+          prefix={<SearchOutlined className="text-gray-400" />}
+          status={errors.name ? "error" : undefined}
+          className="w-full !rounded-xl"
+          size="large"
+          placeholder="بحث بعنوان الشقة"
+          {...field}
+        />
+      ),
+      xs: 24,
+      lg: 7,
+    },
+  ];
+
+  const fetchApartments = ({ queryKey }: any) => {
+    const [, currentParams] = queryKey;
+    return getAllapartments(currentParams);
+  };
+
+  const { data, isLoading } = useQuery(
+    ["apartments", searchParams],
+    fetchApartments,
+    { enabled: Boolean(clientId) }
+  );
+
+  const { mutate: deleteApartment, isLoading: loadingDelete } = useMutation(
+    deleteapartmentApi,
+    {
+      onSuccess: (resData: any) => {
+        toast.success(resData?.message || "تم حذف الشقة بنجاح");
+        queryClient.invalidateQueries(["apartments", searchParams]);
       },
-      {
-        name: "address",
-        render: (field:any)=> <Input prefix={<SearchOutlined className=" text-gray-400"/>} status={errors.name&&'error'}  className="w-full" size="large" placeholder="بحث باسم الشقة " {...field}/>,
-        xs:24,
-        lg:7
+      onError: () => {
+        toast.error("حدث خطأ أثناء حذف الشقة");
       },
- 
-    ]
-    const fetchapartments = ({ queryKey }:any) => {
-      console.log(queryKey);
-      const [, searchParams] = queryKey;
-      return getAllapartments(searchParams)
     }
-  
-    const {data , isLoading} = useQuery(['apartments', searchParams], fetchapartments);
-  
-    const {mutate:deleteapartment , isLoading:loadingDelete} = useMutation(deleteapartmentApi,{
-      onSuccess: (data) => {
-        console.log(data);
-        toast.success(data?.message)
-        queryapartment.invalidateQueries(['apartments', searchParams]);
+  );
+
+  const onDeleteApartment = (id: any) => {
+    confirm({
+      title: "هل أنت متأكد من حذف هذه الشقة؟",
+      content: "سيتم حذف جميع الفواتير والمصروفات المرتبطة بهذه الشقة.",
+      okText: "حذف نهائي",
+      cancelText: "إلغاء",
+      loading: loadingDelete,
+      onConfirm: () => {
+        deleteApartment(id);
       },
-      onError: (error) => {
-        console.error(error);
-        toast.error(!error)
-      }
-    })
-    useEffect(() => {
-    console.log(data);
-  }, [data, pageNumber,searchParams])
-  
-    const onDeleteapartment = (id:any) =>{
-      modal.confirm({
-        title: 'هل انت متأكد من حذف هذه الشقة؟',
-        icon: <ExclamationCircleFilled />,
-        content: '',
-        className:'',
-        direction:'rtl',
-        okText: 'حذف',
-        type:'confirm',
-        okType:'danger',
-        okButtonProps:{type:'primary' , loading:loadingDelete},
-        cancelText: 'الغاء',
-        onOk() {
-          console.log('OK');
-          deleteapartment(id);
-        },
-        onCancel() {
-          console.log('Cancel');
-        },
-      });
-    }
-    const onShowapartmentDetails = (id:any) =>{
+    });
+  };
+
+  const onShowApartmentDetails = (id: any) => {
     navigate(`/account-statement/${clientId}/apartment/${id}`);
-    };
-  
-    const handelFilter = (search:any) =>{
-      console.log(search);
-      let filter = {
-        ...searchParams,
-        ...search
-      }
-     setsearchParams(filter)
-     queryapartment.invalidateQueries(['apartments',filter]);
-      
-    }
-    const changePagination = (page:any) => {
-     console.log(page);
-     setpageNumber(page);
-     let search = {
+  };
+
+  const handleFilter = (search: any) => {
+    const filter = {
       ...searchParams,
-      page:page
-     }
-     setsearchParams(search)
-     queryapartment.invalidateQueries(['apartments',search]);
-  
-    }
+      ...search,
+      page: 1,
+    };
+    setPageNumber(1);
+    setSearchParams(filter);
+    queryClient.invalidateQueries(["apartments", filter]);
+  };
 
-    const resetFilter = () => {
-      reset()
-      setsearchParams({page:1, limit:10,client:clientId})
-    }
+  const changePagination = (page: number) => {
+    setPageNumber(page);
+    const search = {
+      ...searchParams,
+      page: page,
+    };
+    setSearchParams(search);
+  };
 
-    const columns = [
-      {
-        title: 'رقم التسلسل',
-        dataIndex: 'code',
-        key: 'code',
-      },
-      {
-        title: 'عنوان الشقة',
-        dataIndex: 'address',
-        key: 'address',
-      },
-      {
-        title: 'اسم العميل',
-        dataIndex: 'clientDetails.name',
-        key: 'clientDetails.name',
-        render: (_:any, record:any) => (
-          <Text>
-            {record?.clientDetails?.name}
-          </Text>
-        )
-      },
-      {
-        title: ' رقم التليفون',
-        dataIndex: 'clientDetails.phoneNumber',
-        key: 'clientDetails.phoneNumber',
-        render: (_:any, record:any) => (
-          <Text>
-            {record?.clientDetails?.phoneNumber}
-          </Text>
-        )
-      },
-      {
-        title: '',
-        key: 'show',
-        render: (_:any, record:any) => (
-          <ButtonComponent type="primary" className=" bg-slate-500 hover:!bg-slate-400"  tooltipTitle="عرض الشقة" icon={<EyeOutlined />} onClick={()=>onShowapartmentDetails(record?._id)}/>
-        ),
-      },
-      {
-        title: '',
-        key: 'edit',
-        render: (_:any, record:any) => (
-          <ButtonComponent type="primary" icon={<EditFilled />} tooltipTitle="تعديل الشقة" onClick={()=>navigate(`/account-statement/${clientId}/edit-apartment/${record?._id}`)}/>
-        ),
-      },
-      {
-        title: '',
-        key: 'delete',
-        render: (_:any, record:any) => (
-          <ButtonComponent type="primary" danger icon={<DeleteFilled />} tooltipTitle="حذف الشقة" onClick={()=>onDeleteapartment(record?._id)}/>
-        ),
-      },
-    ]
-    return (
-      <>
-      {contextHolder}
-      <div>
-        <Flex justify={'space-between'}>
-          <Title level={3}>الشقق الخاصة بالعميل</Title>
-          <ButtonComponent type="primary" text="اضافة شقة" icon={<PlusOutlined/>} onClick={()=>navigate(`/account-statement/${clientId}/add-apartment`)}/>
-        </Flex>
-        <Flex justify={'space-between'} className=" my-4">
-          <FilterComponent clear={()=>resetFilter()} control={control} errors={errors} inputsArr={inputsArr} onSubmit={handleSubmit(handelFilter)}/>
-        </Flex>
-        <div className=" my-3">
-          <TableComponent rowKey={'code'} pageNumber={pageNumber} pageSize={searchParams.limit} columns={columns} total={data?.metaData[0]?.total} dataSource={data?.data}  loading={isLoading}  onPageChange={changePagination}/>
+  const resetFilter = () => {
+    reset();
+    const defaultParams = { page: 1, limit: 10, client: clientId };
+    setPageNumber(1);
+    setSearchParams(defaultParams);
+    queryClient.invalidateQueries(["apartments", defaultParams]);
+  };
+
+  const columns = [
+    {
+      title: "رقم التسلسل",
+      dataIndex: "code",
+      key: "code",
+      width: 110,
+      render: (code: any) => (
+        <span className="font-semibold text-gray-700 dark:text-gray-300">
+          #{code}
+        </span>
+      ),
+    },
+    {
+      title: "عنوان الشقة",
+      dataIndex: "address",
+      key: "address",
+      render: (address: string, record: any) => (
+        <button
+          type="button"
+          onClick={() => onShowApartmentDetails(record?._id)}
+          className="font-bold text-blue-600 dark:text-blue-400 hover:underline text-right"
+        >
+          {address}
+        </button>
+      ),
+    },
+    {
+      title: "اسم العميل",
+      dataIndex: "clientDetails.name",
+      key: "clientDetails.name",
+      render: (_: any, record: any) => (
+        <span className="font-medium text-gray-800 dark:text-gray-200">
+          {record?.clientDetails?.name || "-"}
+        </span>
+      ),
+    },
+    {
+      title: "رقم التليفون",
+      dataIndex: "clientDetails.phoneNumber",
+      key: "clientDetails.phoneNumber",
+      render: (_: any, record: any) => (
+        <span dir="ltr" className="font-mono text-gray-600 dark:text-gray-400">
+          {record?.clientDetails?.phoneNumber || "-"}
+        </span>
+      ),
+    },
+    {
+      title: "الإجراءات",
+      key: "actions",
+      width: 140,
+      align: "center",
+      render: (_: any, record: any) => (
+        <div className="flex items-center justify-center gap-1.5">
+          <Tooltip title="عرض التفاصيل والفواتير">
+            <ButtonComponent
+              type="text"
+              ariaLabel="عرض الشقة"
+              className="text-blue-600 hover:!bg-blue-50 dark:hover:!bg-blue-900/30 !w-8 !h-8 !p-0 rounded-lg"
+              icon={<EyeOutlined />}
+              onClick={() => onShowApartmentDetails(record?._id)}
+            />
+          </Tooltip>
+
+          <Tooltip title="تعديل الشقة">
+            <ButtonComponent
+              type="text"
+              ariaLabel="تعديل الشقة"
+              className="text-amber-600 hover:!bg-amber-50 dark:hover:!bg-amber-900/30 !w-8 !h-8 !p-0 rounded-lg"
+              icon={<EditFilled />}
+              onClick={() =>
+                navigate(
+                  `/account-statement/${clientId}/edit-apartment/${record?._id}`
+                )
+              }
+            />
+          </Tooltip>
+
+          <Tooltip title="حذف الشقة">
+            <ButtonComponent
+              type="text"
+              danger
+              ariaLabel="حذف الشقة"
+              className="text-red-600 hover:!bg-red-50 dark:hover:!bg-red-900/30 !w-8 !h-8 !p-0 rounded-lg"
+              icon={<DeleteFilled />}
+              onClick={() => onDeleteApartment(record?._id)}
+            />
+          </Tooltip>
         </div>
-      </div>
-      </>
-    )
-}
+      ),
+    },
+  ];
 
-export default Apartments
+  return (
+    <>
+      {contextHolder}
+      <div className="space-y-5 animate-fade-in">
+        <PageHeader
+          title="الشقق الخاصة بالعميل"
+          subtitle="إدارة ومتابعة الشقق والمشاريع التابعة لهذا العميل"
+          icon={<HomeOutlined />}
+          extra={
+            <ButtonComponent
+              type="primary"
+              size="large"
+              text="إضافة شقة جديدة"
+              icon={<PlusOutlined />}
+              onClick={() =>
+                navigate(`/account-statement/${clientId}/add-apartment`)
+              }
+              className="shadow-sm font-semibold"
+            />
+          }
+        />
+
+        <FilterComponent
+          clear={resetFilter}
+          control={control}
+          errors={errors}
+          inputsArr={inputsArr}
+          onSubmit={handleSubmit(handleFilter)}
+        />
+
+        <TableComponent
+          rowKey="_id"
+          pageNumber={pageNumber}
+          pageSize={searchParams.limit}
+          columns={columns}
+          total={data?.metaData?.[0]?.total || 0}
+          dataSource={data?.data || []}
+          loading={isLoading}
+          onPageChange={changePagination}
+        />
+      </div>
+    </>
+  );
+};
+
+export default Apartments;

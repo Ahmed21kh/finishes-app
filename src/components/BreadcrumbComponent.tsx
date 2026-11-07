@@ -1,59 +1,94 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { Breadcrumb } from "antd"
-import { BreadcrumbItemType, BreadcrumbSeparatorType, ItemType as Item } from "antd/es/breadcrumb/Breadcrumb";
-import { useContext } from "react";
+import { Breadcrumb } from "antd";
+import { ItemType as Item } from "antd/es/breadcrumb/Breadcrumb";
+import React, { useContext, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { HomeFilled } from "@ant-design/icons";
 
-const BreadcrumbComponent = () => {
-    const { location } = useContext(AppContext);
-    const itemObj:any = {
-        'invoices':'فواتيري',
-        'customers':'العملاء',
-        'previous-works':'الاعمال السابقة',
-        'categories':'الاقسام',
-        'add-invoice':'اضافة دفعة',
-        'edit-invoice':'تعديل الدفعة',
-        'add-category':'اضافة قسم',
-        'add-customer':'اضافة عميل',
-        'edit-customer':'تعديل عميل',
-        'account-statement':'كشف الحساب',
-        'add-account':'اضافة كشف الحساب',
-        'edit-account':'تعديل كشف الحساب',
-        'add-apartment':'اضافة شقة',
-        'edit-apartment':'تعديل شقة',
-        'apartment':'الشقة',
-        'payments-and-patches':'المصروفات و المدفوعات'
-    }
-    
-    const routes:Partial<BreadcrumbItemType & BreadcrumbSeparatorType>[] =[{path:'/',title:<span className="flex items-center gap-2"> <HomeFilled />{'الرئيسية'}</span>}].concat(location.pathname.trim().split('/').map((route:any)=>{ 
-      const decodedRoute = decodeURIComponent(route);
-      return route && {
-        path:`/${decodedRoute}`,
-        title:itemObj[route]?itemObj[route]: route
-    }})).filter(item => item)
-    console.log({routes});
-    
-    const  itemRender =(currentRoute:Item, _params:any, items:Item[], paths:string[]) => {
-        console.log({items});
-        console.log({paths});
-        console.log({currentRoute});
-        const isLast = currentRoute?.path === items[items.length - 1]?.path;
-        return isLast || currentRoute?.path == '/edit-account' ? (
-          <span>{currentRoute.title}</span>
-        ) : (
-          <Link to={`${paths.join("/")}`} >{currentRoute.title}</Link>
-        );
-      }
-  return (
-    <Breadcrumb
-    className=" pt-4 pb-12 "
-    itemRender={itemRender}
-    items={routes}
-  />
-  )
-}
+const itemTranslationMap: Record<string, string> = {
+  invoices: "فواتيري",
+  customers: "العملاء",
+  "previous-works": "الأعمال السابقة",
+  categories: "الأقسام",
+  "add-invoice": "إضافة دفعة",
+  "edit-invoice": "تعديل الدفعة",
+  "add-category": "إضافة قسم",
+  "add-customer": "إضافة عميل",
+  "edit-customer": "تعديل عميل",
+  "account-statement": "كشف الحساب",
+  "add-account": "إضافة كشف الحساب",
+  "edit-account": "تعديل كشف الحساب",
+  "add-apartment": "إضافة شقة",
+  "edit-apartment": "تعديل شقة",
+  apartment: "الشقة",
+  "payments-and-patches": "المصروفات والمدفوعات",
+  settings: "إعدادات المظهر",
+};
 
-export default BreadcrumbComponent
+export const BreadcrumbComponent: React.FC = () => {
+  const { location } = useContext(AppContext);
+
+  const routes = useMemo(() => {
+    const segments = location.pathname.trim().split("/").filter(Boolean);
+    const result = [
+      {
+        path: "/",
+        title: (
+          <span className="flex items-center gap-1.5 font-medium text-xs sm:text-sm">
+            <HomeFilled className="text-gray-400 dark:text-gray-500" />
+            <span>الرئيسية</span>
+          </span>
+        ),
+      },
+    ];
+
+    let currentPath = "";
+    segments.forEach((segment) => {
+      const decoded = decodeURIComponent(segment);
+      currentPath += `/${decoded}`;
+      const title = itemTranslationMap[segment] || decoded;
+      result.push({
+        path: currentPath,
+        title: <span className="font-medium text-xs sm:text-sm">{title}</span>,
+      });
+    });
+
+    return result;
+  }, [location.pathname]);
+
+  const itemRender = (
+    currentRoute: Item,
+    _params: any,
+    items: Item[],
+    _paths: string[]
+  ) => {
+    const isLast = currentRoute?.path === items[items.length - 1]?.path;
+    const isEditAccount = currentRoute?.path?.includes("/edit-account");
+
+    if (isLast || isEditAccount) {
+      return (
+        <span className="text-gray-800 dark:text-gray-200 font-semibold">
+          {currentRoute.title}
+        </span>
+      );
+    }
+
+    return (
+      <Link
+        to={String(currentRoute.path)}
+        className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+      >
+        {currentRoute.title}
+      </Link>
+    );
+  };
+
+  return (
+    <nav aria-label="شريط مسار التنقل" className="py-2.5">
+      <Breadcrumb itemRender={itemRender} items={routes} />
+    </nav>
+  );
+};
+
+export default BreadcrumbComponent;

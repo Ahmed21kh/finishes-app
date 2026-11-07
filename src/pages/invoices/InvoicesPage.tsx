@@ -1,183 +1,288 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Col, Flex, Input, InputNumber, Modal, Row, Typography } from "antd";
+import { Input, InputNumber, Tooltip } from "antd";
 import ButtonComponent from "../../components/ButtonComponent";
 import {
+  CalendarOutlined,
+  CheckCircleOutlined,
   DeleteFilled,
+  DollarOutlined,
   EditFilled,
-  ExclamationCircleFilled,
+  FileTextOutlined,
   PlusOutlined,
   PrinterFilled,
   SearchOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import TableComponent from "../../components/TableComponent";
-import { ColumnProps } from "antd/es/table";
-import CardComponent from "../../components/CardComponent";
+import PageHeader from "../../components/PageHeader";
+import StatCard from "../../components/StatCard";
+import SkeletonComponent from "../../components/SkeletonComponent";
+import EmptyComponent from "../../components/EmptyComponent";
+import ModalComponent from "../../components/ModalComponent";
+import FilterComponent from "../../components/FilterComponent";
+import PrintContent from "../../components/PrintContent";
+import useConfirmDialog from "../../hooks/useConfirmDialog";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { useContext, useEffect, useRef, useState } from "react";
 import { deleteinvoiceApi, getAllinvoices } from "../../apis/InvoicesApi";
-import EmptyComponent from "../../components/EmptyComponent";
-import SkeletonComponent from "../../components/SkeletonComponent";
 import { toast } from "react-toastify";
 import moment from "moment";
 import { AppContext } from "../../context/AppContext";
 import { useReactToPrint } from "react-to-print";
-import PrintContent from "../../components/PrintContent";
 import { getOneAccountStatementApi } from "../../apis/AccountStatementsApi";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import FilterComponent from "../../components/FilterComponent";
-import ModalComponent from "../../components/ModalComponent";
 
-interface Props {
-  apartmentId?: string | undefined;
-  clientId?: string | undefined;
+export interface InvoicesPageProps {
+  apartmentId?: string;
+  clientId?: string;
 }
-const InvoicesPage = ({ clientId, apartmentId }: Props) => {
-  const { Title, Text } = Typography;
-  const query = useQueryClient();
-  const contentRef = useRef<HTMLDivElement>(null);
-  const reactToPrintFn = useReactToPrint({ 
-    contentRef: contentRef
-  });
-  const { primaryColor } = useContext(AppContext);
-  const [paymentsData, setpaymentsData] = useState([]);
-  const [paymentsDataFilter, setpaymentsDataFilter] = useState([]);
+
+export const InvoicesPage = ({ clientId, apartmentId }: InvoicesPageProps) => {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const searchParams = { page: 1, limit: 1000 };
-  const [activeInvoice, setactiveInvoice] = useState("");
-  const [totalPatch, settotalPatch] = useState(0)
-  const [totalRemainPatch, settotalRemainPatch] = useState(0)
-  const [totalPayment, settotalPayment] = useState(0)
-  const [modal, contextHolder] = Modal.useModal();
-  const [openPrintDialog, setopenPrintDialog] = useState(false);
+  const { primaryColor } = useContext(AppContext);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const { confirm, contextHolder } = useConfirmDialog();
+
+  const reactToPrintFn = useReactToPrint({
+    contentRef: contentRef,
+    documentTitle: "فاتورة أعمال وتشطيبات",
+    pageStyle: `
+      @page {
+        size: A4 portrait;
+        margin: 0mm !important;
+      }
+      @media print {
+        body {
+          margin: 0 !important;
+          padding: 0 !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+    `,
+  });
+
+  const [paymentsData, setPaymentsData] = useState<any[]>([]);
+  const [paymentsDataFilter, setPaymentsDataFilter] = useState<any[]>([]);
+  const [activeInvoice, setActiveInvoice] = useState<string>("");
+  const [printType, setPrintType] = useState<"invoice" | "statement">("invoice");
+  const [totalPatch, setTotalPatch] = useState<number>(0);
+  const [totalRemainPatch, setTotalRemainPatch] = useState<number>(0);
+  const [totalPayment, setTotalPayment] = useState<number>(0);
+  const [openPrintDialog, setOpenPrintDialog] = useState(false);
+
   moment.locale("ar");
 
-
   const searchFilter = yup.object().shape({
-  name: yup.string().notRequired(),
-  code: yup.string().notRequired(),
-  price:yup.number().notRequired(),
+    name: yup.string().notRequired(),
+    code: yup.string().notRequired(),
+    price: yup.number().notRequired(),
   });
 
   const {
     handleSubmit,
-    formState: { errors: errors },
+    formState: { errors },
     reset,
     control,
   } = useForm({
     resolver: yupResolver(searchFilter),
   });
-  const fetchinvoices = ({ queryKey }: any) => {
-    console.log(queryKey);
-    const [, [searchParams , clientId , apartmentId]] = queryKey;
-    const neSearchParams = {
-      ...searchParams,
-      client: clientId,
-      apartment: apartmentId,
+
+  const fetchInvoices = ({ queryKey }: any) => {
+    const [, [, cId, aId]] = queryKey;
+    const params = {
+      page: 1,
+      limit: 1000,
+      client: cId,
+      apartment: aId,
     };
-    return getAllinvoices(neSearchParams);
+    return getAllinvoices(params);
   };
 
-  const fetchClient= ({ queryKey }: any) => {
-    console.log(queryKey);
-    const [, clientId] = queryKey;
-    return getOneAccountStatementApi(clientId);
+  const fetchClient = ({ queryKey }: any) => {
+    const [, cId] = queryKey;
+    return getOneAccountStatementApi(cId);
   };
-
 
   const { data, isLoading } = useQuery(
-    ["invoices", [searchParams, clientId , apartmentId]],
-    fetchinvoices,
-    { enabled: !!clientId && !!apartmentId }
+    ["invoices", [{ page: 1, limit: 1000 }, clientId, apartmentId]],
+    fetchInvoices,
+    { enabled: Boolean(clientId && apartmentId) }
   );
 
-  const { data:Client } = useQuery(
-    ["client", clientId],
-    fetchClient,
-    { enabled: !!clientId }
-  );
-
-  const { mutate: deleteInvoice , isLoading:loadingDelete } = useMutation(deleteinvoiceApi, {
-    onSuccess: (data) => {
-      console.log(data);
-      toast.success(data?.message);
-      query.invalidateQueries(["invoices", [searchParams, clientId , apartmentId] ]);
-    },
-    onError: (error) => {
-      console.error(error);
-      toast.error(!error);
-    },
+  const { data: clientData } = useQuery(["client", clientId], fetchClient, {
+    enabled: Boolean(clientId),
   });
 
-  const handleOpenPrintDialog = () => {
-    setopenPrintDialog(true);
-  }
+  const { mutate: deleteInvoice, isLoading: loadingDelete } = useMutation(
+    deleteinvoiceApi,
+    {
+      onSuccess: (resData) => {
+        toast.success(resData?.message || "تم حذف الدفعة بنجاح");
+        queryClient.invalidateQueries([
+          "invoices",
+          [{ page: 1, limit: 1000 }, clientId, apartmentId],
+        ]);
+      },
+      onError: () => {
+        toast.error("حدث خطأ أثناء حذف الدفعة");
+      },
+    }
+  );
 
-  const handleOpenPrintAllDialog = () => {
-    setopenPrintDialog(true);
-  }
-  const handleClosePrintDialog = () => {
-    setopenPrintDialog(false);
-  }
+  const calculateTotal = (item: any) => {
+    setTotalPatch(Number(item?.payedPatch) || 0);
+    setTotalPayment(Number(item?.totalPrice) || 0);
+    setTotalRemainPatch(Number(item?.remainingAmount) || 0);
+  };
 
-  const handleSelectIvoice = (item: any) => {
-    console.log({item});
-    const arr:any = []
-    arr.push(item)
-    setpaymentsData(item?.items);
-    setpaymentsDataFilter(item?.items);
-    setactiveInvoice(item?._id);
+  const resetData = () => {
+    if (data?.data && data.data.length > 0) {
+      const firstItem = data.data[0];
+      const items = firstItem?.items || [];
+      setPaymentsData(items);
+      setPaymentsDataFilter(items);
+      setActiveInvoice(firstItem?._id);
+      calculateTotal(firstItem);
+    } else {
+      setPaymentsData([]);
+      setPaymentsDataFilter([]);
+      setActiveInvoice("");
+      setTotalPatch(0);
+      setTotalPayment(0);
+      setTotalRemainPatch(0);
+    }
+  };
+
+  useEffect(() => {
+    if (data) {
+      resetData();
+    }
+  }, [data, clientId, apartmentId]);
+
+  const handleSelectInvoice = (item: any) => {
+    setPaymentsData(item?.items || []);
+    setPaymentsDataFilter(item?.items || []);
+    setActiveInvoice(item?._id);
     calculateTotal(item);
+  };
+
+  const selectedInvoiceObj = data?.data?.find(
+    (item: any) => item?._id === activeInvoice
+  );
+
+  const handleEdit = (e: React.MouseEvent, id: any) => {
+    e.stopPropagation();
+    navigate(
+      `/account-statement/${clientId}/apartment/${apartmentId}/edit-invoice/${id}`
+    );
+  };
+
+  const handleDelete = (e: React.MouseEvent, id: any) => {
+    e.stopPropagation();
+    confirm({
+      title: "هل أنت متأكد من حذف هذه الدفعة؟",
+      content: "سيتم حذف هذه الدفعة وجميع البنود المدرجة بداخلها.",
+      okText: "حذف نهائي",
+      cancelText: "إلغاء",
+      loading: loadingDelete,
+      onConfirm: () => {
+        deleteInvoice(id);
+      },
+    });
+  };
+
+  const handleFilter = (search: any) => {
+    ["code", "price"].forEach((key) => {
+      if (search[key]) {
+        search[key] = Number(search[key]);
+      }
+    });
+
+    const filtered = paymentsData.filter((item: any) =>
+      Object.entries(search).every(([key, value]) => {
+        if (!value) return true;
+        if (key === "name") {
+          return item[key]
+            ?.toLowerCase()
+            ?.includes((value as string).trim().toLowerCase());
+        }
+        return item[key] === value;
+      })
+    );
+    setPaymentsDataFilter(filtered);
+  };
+
+  const resetFilter = () => {
+    reset();
+    setPaymentsDataFilter(paymentsData);
   };
 
   const handlePrint = () => {
     reactToPrintFn();
-    setopenPrintDialog(false);
+    setOpenPrintDialog(false);
   };
 
-  const columns: ColumnProps[] = [
+  const openInvoicePrint = () => {
+    setPrintType("invoice");
+    setOpenPrintDialog(true);
+  };
+
+  const openStatementPrint = () => {
+    setPrintType("statement");
+    setOpenPrintDialog(true);
+  };
+
+  const columns = [
     {
       title: "رقم التسلسل",
       dataIndex: "code",
       key: "code",
+      width: 100,
+      render: (code: any) => (
+        <span className="font-semibold text-gray-700 dark:text-gray-300">
+          #{code}
+        </span>
+      ),
     },
     {
       title: "اسم الصنف",
       dataIndex: "name",
       key: "name",
+      render: (name: string) => <span className="font-semibold">{name}</span>,
     },
     {
       title: "سعر الصنف",
       dataIndex: "price",
       key: "price",
       render: (_: any, record: any) => (
-        <Text>
+        <span className="font-bold text-blue-600 dark:text-blue-400">
           {record?.price} ج
-        </Text>
+        </span>
       ),
     },
     {
-      title: "تاريخ الصنف",
+      title: "التاريخ",
       dataIndex: "date",
       key: "date",
       render: (_: any, record: any) => (
-        <Text>
-          {moment(record?.date).locale("ca").format(" DD/MM/YYYY - h:mm:ss A ")}
-        </Text>
+        <span className="text-gray-600 dark:text-gray-400">
+          {moment(record?.date).format("DD/MM/YYYY - h:mm A")}
+        </span>
       ),
     },
     {
-      title: " ملاحظات",
+      title: "ملاحظات",
       dataIndex: "itemNotes",
       key: "itemNotes",
       render: (_: any, record: any) => (
-        <Text>
-          {record?.itemNotes || 'لا يوجد ملاحظات'}
-        </Text>
+        <span className="text-gray-500 dark:text-gray-400">
+          {record?.itemNotes || "لا توجد ملاحظات"}
+        </span>
       ),
     },
   ];
@@ -185,215 +290,257 @@ const InvoicesPage = ({ clientId, apartmentId }: Props) => {
   const inputsArr = [
     {
       name: "code",
-      render: (field:any)=> <InputNumber prefix={<SearchOutlined className=" text-gray-400"/>}  status={errors.code&&'error'}  className=" w-full" size="large" placeholder="بحث بكود الصنف" {...field}/>,
-      xs:24,
-      lg:7
+      render: (field: any) => (
+        <InputNumber
+          prefix={<SearchOutlined className="text-gray-400" />}
+          status={errors.code ? "error" : undefined}
+          className="w-full !rounded-xl"
+          size="large"
+          placeholder="بحث بكود الصنف"
+          {...field}
+        />
+      ),
+      xs: 24,
+      lg: 7,
     },
     {
       name: "name",
-      render: (field:any)=> <Input prefix={<SearchOutlined className=" text-gray-400"/>} status={errors.name&&'error'}  className="w-full" size="large" placeholder="بحث باسم الصنف " {...field}/>,
-      xs:24,
-      lg:7
+      render: (field: any) => (
+        <Input
+          prefix={<SearchOutlined className="text-gray-400" />}
+          status={errors.name ? "error" : undefined}
+          className="w-full !rounded-xl"
+          size="large"
+          placeholder="بحث باسم الصنف"
+          {...field}
+        />
+      ),
+      xs: 24,
+      lg: 7,
     },
     {
       name: "price",
-      render: (field:any)=> <InputNumber prefix={<SearchOutlined className=" text-gray-400"/>} status={errors.price&&'error'}  className="w-full" size="large" placeholder="بحث  بسعر الصنف" {...field}/>,
-      xs:24,
-      lg:7
-    }
-  ]
-
-  const handleEdit = (e: MouseEvent | any, id: any) => {
-    e.stopPropagation();
-    navigate(
-      `/account-statement/${clientId}/apartment/${apartmentId}/edit-invoice/${id}`
-    );
-  };
-
-  const handleDelete = (e: MouseEvent | any, id: any) => {
-    e.stopPropagation();
-    modal.confirm({
-      title: "هل انت متأكد من حذف هذه الدفعة ؟",
-      icon: <ExclamationCircleFilled />,
-      content: "",
-      className: "",
-      direction: "rtl",
-      okText: "حذف",
-      type: "confirm",
-      okType: "danger",
-      okButtonProps: { type: "primary", loading: loadingDelete },
-      cancelText: "الغاء",
-      wrapStyle:{backgroundColor:primaryColor},
-      onOk() {
-        console.log("OK");
-        deleteInvoice(id);
-      },
-      onCancel() {
-        console.log("Cancel");
-      },
-    });
-  };
-
-
-  useEffect(() => {
-    console.log("useEffect",{data});    
-    if (data) {
-      resetData();
-      console.log({isLoading});
-      console.log({data});
-    }
-    
-  }, [data, clientId, apartmentId , isLoading , loadingDelete]);
-
-  const resetData = () => {
-    let items = data?.data![0]?.items;
-    const arr:any = [];
-    const item = data?.data![0];
-    arr.push(item)
-    setpaymentsData(items);
-    setpaymentsDataFilter(items);
-    setactiveInvoice(data?.data![0]?._id);
-    calculateTotal(data?.data![0]);
-  }
-
-  const calculateTotal = (item:any) => {
-    settotalPatch(item?.payedPatch);
-    settotalPayment(item?.totalPrice)
-    settotalRemainPatch(item?.remainingAmount)
-  }
-
-
-  const handelFilter = (search:any) =>{
-    ['code','price'].forEach((key) => {
-      if (search[key]) {
-         search[key] = Number(search[key]);
-      }
-    })
-    const filtered = paymentsData.filter((item:any) =>
-      Object.entries(search).every(([key, value]) => value ? key == 'name' ? item[key]?.includes((value as any)?.trim()?.toLowerCase())  :  item[key] === value : item )
-    );
-    console.log({filtered});
-    setpaymentsDataFilter(filtered);
-  }
-
- const resetFilter = () => {
-    reset();
-    setpaymentsDataFilter(paymentsData);
- }
+      render: (field: any) => (
+        <InputNumber
+          prefix={<SearchOutlined className="text-gray-400" />}
+          status={errors.price ? "error" : undefined}
+          className="w-full !rounded-xl"
+          size="large"
+          placeholder="بحث بسعر الصنف"
+          {...field}
+        />
+      ),
+      xs: 24,
+      lg: 7,
+    },
+  ];
 
   return (
     <>
-    {contextHolder}
-    <ModalComponent centered bodyProps={{className:' h-full overflow-auto my-6 max-h-[80vh]'}} title="تفاصيل الفاتورة" height={'95vh'} width={900} style={{direction:'rtl'}} okText="طباعة" cancelText='الغاء' open={openPrintDialog} onClose={handleClosePrintDialog} onCancel={handleClosePrintDialog} onOk={handlePrint}> 
-      <div className=" bg-white border-2 shadow-md rounded-lg p-4 h-full overflow-auto max-h-[100%]">
-        <PrintContent showPrintContent={true} ref={contentRef}  client={Client} />
-      </div>
-    </ModalComponent>
-    <Flex vertical gap={20}>
-      <Flex justify={"space-between"}>
-        <Title level={3}>الدفعات</Title>
-        <ButtonComponent
-          disabled={!clientId || !apartmentId}
-          type="primary"
-          text="اضافة دفعة"
-          icon={<PlusOutlined />}
-          onClick={() =>
-            navigate(
-              `/account-statement/${clientId}/apartment/${apartmentId}/add-invoice`
-            )
+      {contextHolder}
+
+      {/* Print Modal */}
+      <ModalComponent
+        centered
+        title={
+          printType === "invoice"
+            ? "معاينة طباعة الفاتورة"
+            : "معاينة كشف الحساب الشامل"
+        }
+        width={950}
+        open={openPrintDialog}
+        onCancel={() => setOpenPrintDialog(false)}
+        footer={[
+          <ButtonComponent
+            key="cancel"
+            text="إلغاء"
+            onClick={() => setOpenPrintDialog(false)}
+          />,
+          <ButtonComponent
+            key="print"
+            type="primary"
+            icon={<PrinterFilled />}
+            text="بدء الطباعة"
+            onClick={handlePrint}
+          />,
+        ]}
+      >
+        <div className="bg-white text-gray-900 border border-gray-200 rounded-xl p-4 max-h-[75vh] overflow-y-auto">
+          <PrintContent
+            showPrintContent={true}
+            ref={contentRef}
+            client={clientData}
+            invoice={printType === "invoice" ? selectedInvoiceObj : undefined}
+          />
+        </div>
+      </ModalComponent>
+
+      <div className="space-y-6 animate-fade-in">
+        {/* Section Header: Invoices/Patches */}
+        <PageHeader
+          title="الدفعات المالية"
+          subtitle="اختر دفعة لعرض بنود المصروفات والتفاصيل الخاصة بها"
+          icon={<DollarOutlined />}
+          extra={
+            <ButtonComponent
+              disabled={!clientId || !apartmentId}
+              type="primary"
+              size="large"
+              text="إضافة دفعة جديدة"
+              icon={<PlusOutlined />}
+              onClick={() =>
+                navigate(
+                  `/account-statement/${clientId}/apartment/${apartmentId}/add-invoice`
+                )
+              }
+              className="shadow-sm font-semibold"
+            />
           }
         />
-      </Flex>
-      <Flex gap={10} wrap>
-        {(apartmentId && clientId && data?.data?.length && !isLoading) ? (
-          data?.data?.map((item: any, i: any) => (
-            <CardComponent
-              hoverable={true}
-              key={i}
-              className={`shadow-md min-w-[125px]`}
-              style={{
-                borderColor: activeInvoice == item?._id ? primaryColor : "",
-              }}
-              onClick={() => handleSelectIvoice(item)}
-              actions={[
-                <ButtonComponent
-                  icon={<EditFilled className=" text-blue-500" />}
-                  onClick={(e) => handleEdit(e, item?._id)}
-                />,
-                <ButtonComponent
-                  danger
-                  icon={<DeleteFilled />}
-                  onClick={(e) => handleDelete(e, item?._id)}
-                />,
-              ]}
-            >
-              <Flex vertical gap={10} justify={"center"} align={"center"}>
-                <div>{item?.payedPatch}</div>
-                <div>{moment(item?.date).format(" DD-MM-YYYY")}</div>
-              </Flex>
-            </CardComponent>
-          ))
-        ) : isLoading ? (
-          Array.from([1, 2, 3, 4, 5, 6 , 7, 8]).map((i, _j) => (
-            <Flex key={i}>
-              <SkeletonComponent size="large" active type="Node" style={{width:125,height:161,borderRadius:8}} />
-            </Flex>
-          ))
-        ) : (
-          <Flex justify="center" className=" w-full">
-            <EmptyComponent description="لا يوجد بيانات" />
-          </Flex>
-        )}
-      </Flex>
 
-      <Flex vertical gap={8}>
-        <Flex justify={'space-between'} align={'center'}>
-        <Title level={3}>المصروفات</Title>
-        <Flex gap={10}>
-         <ButtonComponent disabled={!apartmentId || !clientId || isLoading || !paymentsDataFilter?.length} icon={<PrinterFilled/>} text="طباعة الكل" type="primary" onClick={() => handleOpenPrintAllDialog()}/>
-         <ButtonComponent disabled={!apartmentId || !clientId || isLoading || !paymentsDataFilter?.length} icon={<PrinterFilled/>} text="طباعة" type="primary" onClick={() => handleOpenPrintDialog()}/>
-        </Flex>
-         <PrintContent ref={contentRef} client={Client} />
-        </Flex>
-        <Flex className=" my-4">
-        <FilterComponent clear={()=>resetFilter()} control={control} errors={errors} inputsArr={inputsArr} onSubmit={handleSubmit(handelFilter)}/>
-        </Flex>
-        
-        <TableComponent
-          footer={() => (
-            <Row className=" !w-full">
-              <Col xs={8}>
-              <Flex gap={6} align={"center"}>
-                <Title className=" !text-gray-400 !mb-0" level={4}>
-                  الاجمالي :
-                </Title>
-                <Text className=" !text-lg">{totalPatch||0} ج</Text>
-              </Flex>
-              </Col>
-              <Col xs={8}>
-              <Flex gap={6} align={"center"}>
-                <Title className=" !text-gray-400 !mb-0" level={4}>
-                  المصروف :
-                </Title>
-                <Text className=" !text-lg">{totalPayment||0} ج</Text>
-              </Flex>
-              </Col>
-              <Col xs={8}>
-              <Flex gap={6} align={"center"}>
-                <Title className=" !text-gray-400 !mb-0" level={4}>
-                  المتبقي :
-                </Title>
-                <Text className=" !text-lg">{totalRemainPatch||0} ج</Text>
-              </Flex>
-              </Col>
-            </Row>
+        {/* Invoice selection cards grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {Boolean(apartmentId && clientId && data?.data?.length && !isLoading) ? (
+            data.data.map((item: any, i: number) => {
+              const isSelected = activeInvoice === item?._id;
+              return (
+                <div
+                  key={item?._id || i}
+                  onClick={() => handleSelectInvoice(item)}
+                  className={`relative cursor-pointer rounded-2xl p-4 transition-all duration-200 border text-center ${
+                    isSelected
+                      ? "border-blue-500 bg-blue-50/70 dark:bg-blue-950/30 shadow-md ring-2 ring-blue-500/20"
+                      : "border-gray-200/80 dark:border-neutral-800 bg-white dark:bg-[#1a1a1a] hover:border-gray-300 dark:hover:border-neutral-700 hover:shadow-sm"
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-1.5 mb-3">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      دفعة #{item?.code || i + 1}
+                    </span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">
+                      {item?.payedPatch} ج
+                    </span>
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <CalendarOutlined />
+                      {moment(item?.date).format("DD/MM/YYYY")}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-1 pt-2 border-t border-gray-100 dark:border-neutral-800/80">
+                    <Tooltip title="تعديل الدفعة">
+                      <ButtonComponent
+                        type="text"
+                        ariaLabel="تعديل الدفعة"
+                        className="text-blue-600 hover:!bg-blue-100/50 !w-7 !h-7 !p-0 rounded-lg"
+                        icon={<EditFilled />}
+                        onClick={(e: any) => handleEdit(e, item?._id)}
+                      />
+                    </Tooltip>
+                    <Tooltip title="حذف الدفعة">
+                      <ButtonComponent
+                        type="text"
+                        danger
+                        ariaLabel="حذف الدفعة"
+                        className="text-red-600 hover:!bg-red-100/50 !w-7 !h-7 !p-0 rounded-lg"
+                        icon={<DeleteFilled />}
+                        onClick={(e: any) => handleDelete(e, item?._id)}
+                      />
+                    </Tooltip>
+                  </div>
+                </div>
+              );
+            })
+          ) : isLoading ? (
+            Array.from({ length: 6 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="h-32 rounded-2xl border border-gray-200/60 dark:border-neutral-800 bg-white dark:bg-[#1a1a1a] p-4 flex flex-col justify-between"
+              >
+                <SkeletonComponent active type="input" style={{ width: "100%", height: 20 }} />
+                <SkeletonComponent active type="input" style={{ width: "60%", height: 20 }} />
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full py-8 text-center bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200/80 dark:border-neutral-800">
+              <EmptyComponent description="لم يتم العثور على أي دفعات مسجلة لهذه الشقة" />
+            </div>
           )}
-          columns={columns}
-          rowKey={'code'}
-          dataSource={apartmentId && clientId ? paymentsDataFilter : []}
-        />
-      </Flex>
-    </Flex>
+        </div>
+
+        {/* Selected Invoice Details / Expenses Table */}
+        <div className="space-y-4 pt-4 border-t border-gray-200/80 dark:border-neutral-800">
+          {/* Summary Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard
+              label="المبلغ المسدد (الدفعة الحالية)"
+              value={`${totalPatch || 0} ج`}
+              variant="success"
+              icon={<DollarOutlined />}
+            />
+            <StatCard
+              label="إجمالي المصروفات الحالية"
+              value={`${totalPayment || 0} ج`}
+              variant="primary"
+              icon={<FileTextOutlined />}
+            />
+            <StatCard
+              label="المتبقي من الدفعة"
+              value={`${totalRemainPatch || 0} ج`}
+              variant={totalRemainPatch < 0 ? "danger" : "warning"}
+              icon={<CheckCircleOutlined />}
+            />
+          </div>
+
+          {/* Subheader and print buttons */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <FileTextOutlined className="text-blue-500" />
+                بنود المصروفات للدفعة المحددة #{selectedInvoiceObj?.code || ""}
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                قائمة الأصناف والتكاليف المصروفة من هذه الدفعة
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <ButtonComponent
+                disabled={!selectedInvoiceObj || !paymentsDataFilter?.length}
+                icon={<PrinterFilled />}
+                text="طباعة الفاتورة الحالية"
+                type="primary"
+                onClick={openInvoicePrint}
+                className="shadow-sm"
+              />
+              <ButtonComponent
+                disabled={!clientData}
+                icon={<PrinterFilled />}
+                text="طباعة كشف الحساب الشامل"
+                type="default"
+                onClick={openStatementPrint}
+              />
+            </div>
+          </div>
+
+          {/* Search/Filter for items */}
+          <FilterComponent
+            clear={resetFilter}
+            control={control}
+            errors={errors}
+            inputsArr={inputsArr}
+            onSubmit={handleSubmit(handleFilter)}
+          />
+
+          {/* Items Table */}
+          <TableComponent
+            columns={columns}
+            rowKey="code"
+            dataSource={apartmentId && clientId ? paymentsDataFilter : []}
+            showPagination={false}
+            loading={isLoading}
+          />
+        </div>
+      </div>
     </>
   );
 };
