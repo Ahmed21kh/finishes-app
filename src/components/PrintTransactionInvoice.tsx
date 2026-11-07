@@ -39,7 +39,11 @@ export const PrintTransactionInvoice = React.forwardRef<
       ref={ref}
       dir="rtl"
       className="p-8 bg-white text-slate-900 font-cairo print-container"
-      style={{ width: "100%", maxWidth: "800px", margin: "0 auto" }}
+      style={{
+        width: "100%",
+        maxWidth: "800px",
+        margin: "0 auto",
+      }}
     >
       {/* Letterhead Header */}
       <div className="border-b border-slate-200 pb-5 mb-6">
@@ -56,34 +60,37 @@ export const PrintTransactionInvoice = React.forwardRef<
                 <HomeFilled className="text-xl" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                <h1 className="text-2xl font-black text-slate-900 m-0 leading-tight">
                   شـــطــــب
                 </h1>
-                <p className="text-xs font-bold text-slate-600">
+                <p className="text-xs font-bold text-slate-600 m-0 leading-tight mt-0.5">
                   لأعمال الديكور والتشطيبات المتكاملة
                 </p>
               </div>
             </div>
-            <p className="text-xs font-semibold text-slate-500 mt-1">
-              م / حاتم الوكيل • 01020696230
+            <p className="text-xs font-semibold text-slate-500 m-0 mt-1">
+              إشراف هندسي: م / حاتم الوكيل • هاتف: 01020696230
             </p>
           </div>
 
           {/* Invoice Title & Stamp Badge */}
-          <div className="flex flex-col items-end">
-            <div className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-black text-base shadow-xs mb-2">
+          <div className="flex flex-col items-end text-left" dir="rtl">
+            <div className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-black text-sm shadow-xs mb-2">
               فاتورة معاملة
             </div>
-            <div className="text-xs text-slate-700 font-bold space-y-1 text-right" dir="rtl">
+            <div className="text-xs text-slate-700 font-bold space-y-1.5 text-right" dir="rtl">
               <div className="flex items-center gap-1.5 justify-end">
                 <span className="text-slate-500 font-medium">رقم الفاتورة:</span>
-                <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]" dir="ltr">
+                <span
+                  className="font-mono font-bold text-slate-900 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs"
+                  dir="ltr"
+                >
                   #INV-{String(transaction?.code || 1000).padStart(4, "0")}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 justify-end">
-                <span className="text-slate-500 font-medium">التاريخ:</span>
-                <span className="font-semibold text-slate-900">
+                <span className="text-slate-500 font-medium">تاريخ الفاتورة:</span>
+                <span className="font-semibold text-slate-900" dir="ltr">
                   {dayjs(transaction?.date || new Date()).format("YYYY/MM/DD")}
                 </span>
               </div>
@@ -94,19 +101,19 @@ export const PrintTransactionInvoice = React.forwardRef<
 
       {/* Transaction Title Banner */}
       <div className="mb-6 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <FileTextOutlined className="text-lg text-slate-700" />
+        <div className="flex items-center gap-3">
+          <FileTextOutlined className="text-xl text-blue-600" />
           <div>
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+            <p className="text-[11px] font-bold text-slate-500 m-0 leading-tight mb-0.5">
               اسم المعاملة / الخدمة
             </p>
-            <h2 className="text-base font-black text-slate-900">
+            <h2 className="text-base font-black text-slate-900 m-0 leading-tight">
               {transaction?.title || "معاملة تشطيب"}
             </h2>
           </div>
         </div>
-        <div className="text-left text-xs text-slate-600">
-          <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-800">
+        <div className="text-left shrink-0">
+          <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300/50">
             {transaction?.status || "قيد التنفيذ"}
           </span>
         </div>
@@ -114,33 +121,30 @@ export const PrintTransactionInvoice = React.forwardRef<
 
       {/* Client Information Box */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-6 shadow-xs">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
-          بيانات العميل
+        <h3 className="text-xs font-bold text-slate-500 mb-3 flex items-center gap-1.5 m-0">
+          <UserOutlined className="text-blue-500" />
+          <span>بيانات العميل</span>
         </h3>
         <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-700">
           <div className="flex items-center gap-2">
-            <UserOutlined className="text-slate-400" />
             <span className="text-slate-500">اسم العميل:</span>
             <span className="font-bold text-slate-900">
               {client?.clientName || "—"}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <PhoneOutlined className="text-slate-400" />
             <span className="text-slate-500">رقم الهاتف:</span>
-            <span className="font-bold text-slate-900" dir="ltr">
+            <span className="font-bold text-slate-900 font-mono" dir="ltr">
               {client?.phoneNumber || "—"}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <EnvironmentOutlined className="text-slate-400" />
             <span className="text-slate-500">العنوان:</span>
             <span className="font-bold text-slate-900">
               {client?.address || "—"}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <CalendarOutlined className="text-slate-400" />
             <span className="text-slate-500">كود العميل:</span>
             <span className="font-bold text-slate-900">
               #{client?.code || "—"}
@@ -151,8 +155,8 @@ export const PrintTransactionInvoice = React.forwardRef<
 
       {/* Expenses & Costs Table (المصروفات والتكاليف) */}
       <div className="mb-6">
-        <div className="flex justify-between items-center mb-2 px-1">
-          <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+        <div className="flex justify-between items-center mb-2.5 px-1">
+          <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 m-0">
             <span>المصروفات والتكاليف</span>
             <span className="text-xs font-normal text-slate-500">
               ({payments.length} بند)
@@ -165,33 +169,33 @@ export const PrintTransactionInvoice = React.forwardRef<
         <table className="w-full text-xs text-right border-collapse border border-slate-200 rounded-xl overflow-hidden">
           <thead>
             <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-              <th className="p-2.5 w-12 text-center">#</th>
-              <th className="p-2.5">اسم البند / الصنف</th>
-              <th className="p-2.5 w-28 text-left">التكلفة (ج.م)</th>
-              <th className="p-2.5 w-28 text-center">التاريخ</th>
-              <th className="p-2.5">ملاحظات</th>
+              <th className="py-2.5 px-3 w-12 text-center align-middle">#</th>
+              <th className="py-2.5 px-3 align-middle">اسم البند / الصنف</th>
+              <th className="py-2.5 px-3 w-28 text-left align-middle">التكلفة (ج.م)</th>
+              <th className="py-2.5 px-3 w-28 text-center align-middle">التاريخ</th>
+              <th className="py-2.5 px-3 align-middle">ملاحظات</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {payments.length > 0 ? (
               payments.map((p, idx) => (
                 <tr key={p._id || idx} className="hover:bg-slate-50/50">
-                  <td className="p-2.5 text-center font-bold text-slate-500">
+                  <td className="py-2.5 px-3 text-center font-bold text-slate-500 align-middle">
                     {idx + 1}
                   </td>
-                  <td className="p-2.5 font-bold text-slate-900">{p.name}</td>
-                  <td className="p-2.5 text-left font-black text-slate-900" dir="ltr">
+                  <td className="py-2.5 px-3 font-bold text-slate-900 align-middle">{p.name}</td>
+                  <td className="py-2.5 px-3 text-left font-black text-slate-900 align-middle" dir="ltr">
                     {Number(p.price).toLocaleString()} ج.م
                   </td>
-                  <td className="p-2.5 text-center text-slate-600">
+                  <td className="py-2.5 px-3 text-center text-slate-600 align-middle">
                     {dayjs(p.date).format("YYYY/MM/DD")}
                   </td>
-                  <td className="p-2.5 text-slate-500">{p.notes || "—"}</td>
+                  <td className="py-2.5 px-3 text-slate-500 align-middle">{p.notes || "—"}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-slate-400">
+                <td colSpan={5} className="p-4 text-center text-slate-400 align-middle">
                   لا توجد بنود مصروفات مسجلة لهذه المعاملة
                 </td>
               </tr>
@@ -202,8 +206,8 @@ export const PrintTransactionInvoice = React.forwardRef<
 
       {/* Received Patches Table (الدفعات المستلمة) */}
       <div className="mb-6">
-        <div className="flex justify-between items-center mb-2 px-1">
-          <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+        <div className="flex justify-between items-center mb-2.5 px-1">
+          <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 m-0">
             <span>الدفعات المستلمة من العميل</span>
             <span className="text-xs font-normal text-slate-500">
               ({patches.length} دفعة)
@@ -216,34 +220,34 @@ export const PrintTransactionInvoice = React.forwardRef<
         <table className="w-full text-xs text-right border-collapse border border-slate-200 rounded-xl overflow-hidden">
           <thead>
             <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-              <th className="p-2.5 w-12 text-center">#</th>
-              <th className="p-2.5 w-36 text-left">مبلغ الدفعة (ج.م)</th>
-              <th className="p-2.5 w-32 text-center">تاريخ الدفعة</th>
-              <th className="p-2.5">ملاحظات وطريقة الاستلام</th>
+              <th className="py-2.5 px-3 w-12 text-center align-middle">#</th>
+              <th className="py-2.5 px-3 w-36 text-left align-middle">مبلغ الدفعة (ج.م)</th>
+              <th className="py-2.5 px-3 w-32 text-center align-middle">تاريخ الدفعة</th>
+              <th className="py-2.5 px-3 align-middle">ملاحظات وطريقة الاستلام</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {patches.length > 0 ? (
               patches.map((p, idx) => (
                 <tr key={p._id || idx} className="hover:bg-slate-50/50">
-                  <td className="p-2.5 text-center font-bold text-slate-500">
+                  <td className="py-2.5 px-3 text-center font-bold text-slate-500 align-middle">
                     {idx + 1}
                   </td>
                   <td
-                    className="p-2.5 text-left font-black text-emerald-700"
+                    className="py-2.5 px-3 text-left font-black text-emerald-700 align-middle"
                     dir="ltr"
                   >
                     {Number(p.amount).toLocaleString()} ج.م
                   </td>
-                  <td className="p-2.5 text-center text-slate-600">
+                  <td className="py-2.5 px-3 text-center text-slate-600 align-middle">
                     {dayjs(p.date).format("YYYY/MM/DD")}
                   </td>
-                  <td className="p-2.5 text-slate-500">{p.notes || "—"}</td>
+                  <td className="py-2.5 px-3 text-slate-500 align-middle">{p.notes || "—"}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="p-4 text-center text-slate-400">
+                <td colSpan={4} className="p-4 text-center text-slate-400 align-middle">
                   لم يتم تسجيل دفعات مستلمة لهذه المعاملة بعد
                 </td>
               </tr>

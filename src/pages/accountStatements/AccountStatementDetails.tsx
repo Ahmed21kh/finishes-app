@@ -64,6 +64,7 @@ export const AccountStatementDetails = () => {
   // Print refs & states
   const statementPrintRef = useRef<HTMLDivElement>(null);
   const invoicePrintRef = useRef<HTMLDivElement>(null);
+  const modalInvoiceRef = useRef<HTMLDivElement>(null);
   const [openStatementPrintModal, setOpenStatementPrintModal] = useState(false);
   const [openInvoicePrintModal, setOpenInvoicePrintModal] = useState(false);
 
@@ -662,7 +663,7 @@ export const AccountStatementDetails = () => {
                 text="تحميل PDF"
                 onClick={() =>
                   downloadInvoicePDF(
-                    invoicePrintRef.current,
+                    modalInvoiceRef.current || invoicePrintRef.current,
                     `فاتورة-${selectedTransactionForPrint?.title || "معاملة"}`
                   )
                 }
@@ -689,6 +690,7 @@ export const AccountStatementDetails = () => {
         {selectedTransactionForPrint && client && (
           <div className="max-h-[75vh] overflow-y-auto border border-gray-200 dark:border-neutral-800 rounded-xl bg-gray-50/50 p-2">
             <PrintTransactionInvoice
+              ref={modalInvoiceRef}
               transaction={selectedTransactionForPrint}
               client={client}
             />

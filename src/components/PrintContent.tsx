@@ -122,10 +122,10 @@ export const PrintContent = React.forwardRef<HTMLDivElement, PrintProps>(
                 <HomeFilled />
               </div>
               <div>
-                <h1 className="text-2xl font-black tracking-tight text-gray-900 m-0">
+                <h1 className="text-2xl font-black text-gray-900 m-0">
                   شــــــــطب
                 </h1>
-                <p className="text-xs font-bold text-blue-900 tracking-wide m-0">
+                <p className="text-xs font-bold text-blue-900 m-0">
                   لأعمال التشطيبات والديكور والمقاولات
                 </p>
                 <p className="text-xs font-semibold text-gray-600 m-0">

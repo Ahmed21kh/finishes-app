@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Modal,
   Input,
@@ -165,13 +165,18 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
     }
   };
 
+  const isSubmittingRef = useRef(false);
+
   const handleSave = async (shouldPrint: boolean = false) => {
+    if (isSubmittingRef.current || saving) return;
+
     if (!title.trim()) {
       toast.error("يرجى كتابة اسم المعاملة أو الخدمة أو الشقة");
       return;
     }
 
     try {
+      isSubmittingRef.current = true;
       setSaving(true);
       const payload = {
         accountStatement: accountStatementId,
@@ -202,6 +207,7 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
       toast.error(error?.response?.data?.message || "حدث خطأ أثناء حفظ المعاملة");
     } finally {
       setSaving(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -246,7 +252,6 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
               text="حفظ المعاملة"
               icon={<SaveOutlined />}
               size="large"
-              onClick={() => handleSave(false)}
               loading={saving}
               className="px-5 font-semibold"
             />

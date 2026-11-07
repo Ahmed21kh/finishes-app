@@ -104,24 +104,39 @@ export const downloadInvoicePDF = (
     return;
   }
 
+  // Scroll parent container to top so html2canvas captures from (0,0) without scroll displacement
+  const scrollParent = element.closest(".overflow-y-auto") as HTMLElement | null;
+  const originalScrollTop = scrollParent ? scrollParent.scrollTop : 0;
+  if (scrollParent) {
+    scrollParent.scrollTop = 0;
+  }
+  
   const opt = {
-    margin: 8,
+    margin: [6, 6, 6, 6] as [number, number, number, number],
     filename: `${fileName}.pdf`,
-    image: { type: "jpeg" as const, quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+    image: { type: "jpeg" as const, quality: 1.0 },
+    html2canvas: {
+      scale: 3,
+      useCORS: true,
+      logging: false,
+      scrollY: 0,
+      scrollX: 0,
+    },
     jsPDF: { unit: "mm" as const, format: "a4" as const, orientation: "portrait" as const },
   };
 
-  toast.info("جاري تجهيز وتحميل ملف الـ PDF...");
+  toast.info("جاري تجهيز وتحميل ملف الـ PDF بدقة عالية...");
   html2pdf()
     .from(element)
     .set(opt)
     .save()
     .then(() => {
       toast.success("تم تحميل الفاتورة بصيغة PDF بنجاح 📄");
+      if (scrollParent) scrollParent.scrollTop = originalScrollTop;
     })
     .catch((err: any) => {
       console.error("PDF export error:", err);
       toast.error("حدث خطأ أثناء حفظ ملف الـ PDF");
+      if (scrollParent) scrollParent.scrollTop = originalScrollTop;
     });
 };
