@@ -121,6 +121,38 @@ export const downloadInvoicePDF = (
       logging: false,
       scrollY: 0,
       scrollX: 0,
+      onclone: (clonedDoc: Document) => {
+        // Compensate Cairo font baseline metrics in html2canvas (ONLY for PDF generation)
+        // 1. Invoice Title Badge ('فاتورة معاملة')
+        clonedDoc.querySelectorAll<HTMLElement>('[data-pdf-badge="title"]').forEach((badge) => {
+          badge.style.setProperty("padding-top", "1px", "important");
+          badge.style.setProperty("padding-bottom", "8px", "important");
+          badge.style.setProperty("line-height", "1.2", "important");
+          badge.style.setProperty("display", "inline-block", "important");
+        });
+
+        // 2. Status Badge ('مكتملة' / 'قيد التنفيذ')
+        clonedDoc.querySelectorAll<HTMLElement>('[data-pdf-badge="status"]').forEach((badge) => {
+          badge.style.setProperty("padding-top", "0px", "important");
+          badge.style.setProperty("padding-bottom", "6px", "important");
+          badge.style.setProperty("line-height", "1.2", "important");
+          badge.style.setProperty("display", "inline-block", "important");
+        });
+
+        // 3. Code Badge ('#INV-1001')
+        clonedDoc.querySelectorAll<HTMLElement>('[data-pdf-badge="code"]').forEach((badge) => {
+          badge.style.setProperty("padding-top", "0px", "important");
+          badge.style.setProperty("padding-bottom", "4px", "important");
+          badge.style.setProperty("line-height", "1.2", "important");
+          badge.style.setProperty("display", "inline-block", "important");
+        });
+
+        // 4. Financial Summary Cards
+        clonedDoc.querySelectorAll<HTMLElement>('[data-pdf-card="summary"]').forEach((card) => {
+          card.style.setProperty("padding-top", "12px", "important");
+          card.style.setProperty("padding-bottom", "16px", "important");
+        });
+      },
     },
     jsPDF: { unit: "mm" as const, format: "a4" as const, orientation: "portrait" as const },
   };

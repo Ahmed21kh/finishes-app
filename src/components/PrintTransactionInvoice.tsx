@@ -75,13 +75,17 @@ export const PrintTransactionInvoice = React.forwardRef<
 
           {/* Invoice Title & Stamp Badge */}
           <div className="flex flex-col items-end text-left" dir="rtl">
-            <div className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-black text-sm shadow-xs mb-2">
+            <div
+              data-pdf-badge="title"
+              className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-black text-sm shadow-xs mb-2"
+            >
               فاتورة معاملة
             </div>
             <div className="text-xs text-slate-700 font-bold space-y-1.5 text-right" dir="rtl">
               <div className="flex items-center gap-1.5 justify-end">
                 <span className="text-slate-500 font-medium">رقم الفاتورة:</span>
                 <span
+                  data-pdf-badge="code"
                   className="font-mono font-bold text-slate-900 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs"
                   dir="ltr"
                 >
@@ -113,7 +117,10 @@ export const PrintTransactionInvoice = React.forwardRef<
           </div>
         </div>
         <div className="text-left shrink-0">
-          <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300/50">
+          <span
+            data-pdf-badge="status"
+            className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300/50"
+          >
             {transaction?.status || "قيد التنفيذ"}
           </span>
         </div>
@@ -259,7 +266,7 @@ export const PrintTransactionInvoice = React.forwardRef<
       {/* Financial Summary Section */}
       <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 mb-8 shadow-xs">
         <div className="grid grid-cols-3 gap-3.5 text-center">
-          <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+          <div data-pdf-card="summary" className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-xs">
             <p className="text-[11px] font-bold text-slate-500 mb-1">
               إجمالي الدفعات المستلمة
             </p>
@@ -267,7 +274,7 @@ export const PrintTransactionInvoice = React.forwardRef<
               {totalPatches.toLocaleString()} ج.م
             </p>
           </div>
-          <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+          <div data-pdf-card="summary" className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-xs">
             <p className="text-[11px] font-bold text-slate-500 mb-1">
               إجمالي المصروفات والتكاليف
             </p>
@@ -276,6 +283,7 @@ export const PrintTransactionInvoice = React.forwardRef<
             </p>
           </div>
           <div
+            data-pdf-card="summary"
             className={`p-3.5 rounded-xl border shadow-xs ${
               isCreditor
                 ? "bg-emerald-50/80 border-emerald-200 text-emerald-900"
