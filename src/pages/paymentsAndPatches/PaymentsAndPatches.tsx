@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Select, Row, Col, Tag, Tooltip } from "antd";
+import { Select, Row, Col, Tag, Tooltip, Spin } from "antd";
 import { getAccountStatementsNames } from "../../apis/AccountStatementsApi";
 import {
   getTransactionsByClientApi,
@@ -70,11 +70,17 @@ export const PaymentsAndPatches = () => {
   );
 
   // Fetch all transactions for the selected client
-  const { data: clientData, isLoading: loadingTransactions } = useQuery(
+  const {
+    data: clientData,
+    isLoading: loadingTransactions,
+    isFetching,
+  } = useQuery(
     ["clientTransactions", clientId],
     () => getTransactionsByClientApi(clientId as string),
     { enabled: Boolean(clientId) }
   );
+
+  const isClientDataLoading = Boolean(clientId) && (loadingTransactions || isFetching);
 
   const transactions = clientData?.transactions || [];
   const client = clientData?.client;
@@ -358,6 +364,7 @@ export const PaymentsAndPatches = () => {
                   type="primary"
                   icon={<PlusOutlined />}
                   text="إضافة معاملة جديدة"
+                  disabled={isClientDataLoading}
                   onClick={() => {
                     setEditingTransaction(null);
                     setTransactionModalOpen(true);
@@ -407,8 +414,8 @@ export const PaymentsAndPatches = () => {
               </label>
               <Select
                 allowClear
-                disabled={!clientId}
-                loading={loadingTransactions}
+                disabled={!clientId || isClientDataLoading}
+                loading={isClientDataLoading}
                 options={transactions.map((t: Transaction) => ({
                   value: t._id,
                   label: `#${t.code || 1000} - ${t.title} (${dayjs(t.date).format("YYYY/MM/DD")}) - ${t.status || "قيد التنفيذ"}`,
@@ -418,11 +425,13 @@ export const PaymentsAndPatches = () => {
                 className="!w-full !rounded-xl"
                 size="large"
                 placeholder={
-                  clientId
-                    ? transactions.length > 0
-                      ? "اختر المعاملة الخاصة بهذا العميل..."
-                      : "لا توجد معاملات مسجلة بعد لهذا العميل"
-                    : "يرجى اختيار العميل أولاً"
+                  !clientId
+                    ? "يرجى اختيار العميل أولاً"
+                    : isClientDataLoading
+                    ? "جاري تحميل المعاملات..."
+                    : transactions.length > 0
+                    ? "اختر المعاملة الخاصة بهذا العميل..."
+                    : "لا توجد معاملات مسجلة بعد لهذا العميل"
                 }
                 value={transactionId || undefined}
                 onChange={changeTransaction}
@@ -432,7 +441,21 @@ export const PaymentsAndPatches = () => {
         </CardComponent>
 
         {/* Content Area */}
-        {clientId && selectedTransaction ? (
+        {clientId && isClientDataLoading ? (
+          <CardComponent className="py-20 text-center shadow-sm">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <Spin size="large" />
+              <div className="space-y-1">
+                <p className="text-base font-bold text-gray-800 dark:text-gray-200 animate-pulse">
+                  جاري تحميل بيانات ومعاملات العميل...
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  يرجى الانتظار لحظات لجلب السجلات المالية والفواتير
+                </p>
+              </div>
+            </div>
+          </CardComponent>
+        ) : clientId && selectedTransaction ? (
           <div className="space-y-6 animate-fade-in">
             {/* Transaction Header Card */}
             <CardComponent className="p-4 sm:p-5 shadow-sm">
