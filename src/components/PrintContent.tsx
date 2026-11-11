@@ -6,8 +6,8 @@ import {
   WhatsAppOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
-  HomeFilled,
 } from "@ant-design/icons";
+import ShatabLogoIcon from "./ShatabLogo";
 
 export interface PrintProps {
   client?: any;
@@ -115,12 +115,7 @@ export const PrintContent = React.forwardRef<HTMLDivElement, PrintProps>(
           <div className="flex justify-between items-start border-b-2 border-gray-900 pb-5">
             {/* Company Branding */}
             <div className="flex items-center gap-3">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md shrink-0"
-                style={{ background: "linear-gradient(135deg, #1677ff, #6366f1)" }}
-              >
-                <HomeFilled />
-              </div>
+              <ShatabLogoIcon size={48} className="rounded-2xl shadow-md shrink-0" />
               <div>
                 <h1 className="text-2xl font-black text-gray-900 m-0">
                   شــــــــطب

@@ -48,21 +48,21 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${variantStyles[variant]} ${className}`}
+      className={`relative overflow-hidden rounded-2xl border p-3 sm:p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${variantStyles[variant]} ${className}`}
       role="region"
       aria-label={label}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-2.5 sm:gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate mb-1">
+          <p className="text-xs sm:text-sm font-semibold text-gray-500 dark:text-gray-400 truncate mb-1">
             {label}
           </p>
-          <div className="flex items-baseline gap-2">
-            <span className={`text-xl sm:text-2xl font-bold tracking-tight ${valueStyles[variant]}`}>
+          <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+            <span className={`text-lg sm:text-2xl font-black tracking-tight ${valueStyles[variant]}`}>
               {value}
             </span>
             {trend && (
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              <span className="text-[11px] sm:text-xs font-medium text-gray-500 dark:text-gray-400">
                 {trend}
               </span>
             )}
@@ -71,7 +71,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
         {icon && (
           <div
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg ${iconStyles[variant]}`}
+            className={`flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl text-base sm:text-lg ${iconStyles[variant]}`}
             aria-hidden="true"
           >
             {icon}

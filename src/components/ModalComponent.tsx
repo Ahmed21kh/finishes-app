@@ -10,11 +10,13 @@ export interface ModalCompProps extends ModalProps {
 export const ModalComponent: React.FC<ModalCompProps> = ({
   children,
   className = "",
+  style,
   ...rest
 }) => {
   return (
     <Modal
-      className={`rounded-2xl overflow-hidden ${className}`}
+      className={`rounded-2xl overflow-hidden !max-w-[calc(100vw-20px)] ${className}`}
+      style={{ maxWidth: "calc(100vw - 20px)", margin: "12px auto", ...style }}
       destroyOnClose
       {...rest}
     >

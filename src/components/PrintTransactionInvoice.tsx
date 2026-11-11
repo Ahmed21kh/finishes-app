@@ -8,8 +8,8 @@ import {
   EnvironmentOutlined,
   UserOutlined,
   FileTextOutlined,
-  HomeFilled,
 } from "@ant-design/icons";
+import ShatabLogoIcon from "./ShatabLogo";
 
 interface PrintTransactionInvoiceProps {
   transaction: Transaction;
@@ -51,14 +51,7 @@ export const PrintTransactionInvoice = React.forwardRef<
           {/* Company Brand */}
           <div className="text-right">
             <div className="flex items-center gap-3 mb-1">
-              <div
-                className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0"
-                style={{
-                  background: "linear-gradient(135deg, #1677ff, #6366f1)",
-                }}
-              >
-                <HomeFilled className="text-xl" />
-              </div>
+              <ShatabLogoIcon size={44} className="rounded-2xl shadow-md shrink-0" />
               <div>
                 <h1 className="text-2xl font-black text-slate-900 m-0 leading-tight">
                   شـــطــــب
@@ -77,16 +70,16 @@ export const PrintTransactionInvoice = React.forwardRef<
           <div className="flex flex-col items-end text-left" dir="rtl">
             <div
               data-pdf-badge="title"
-              className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-black text-sm shadow-xs mb-2"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-slate-900 text-white font-black text-sm shadow-xs mb-2 leading-none"
             >
-              فاتورة معاملة
+              <span className="inline-block leading-none pt-0.5">فاتورة معاملة</span>
             </div>
             <div className="text-xs text-slate-700 font-bold space-y-1.5 text-right" dir="rtl">
               <div className="flex items-center gap-1.5 justify-end">
                 <span className="text-slate-500 font-medium">رقم الفاتورة:</span>
                 <span
                   data-pdf-badge="code"
-                  className="font-mono font-bold text-slate-900 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs"
+                  className="inline-flex items-center justify-center font-mono font-bold text-slate-900 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs leading-none"
                   dir="ltr"
                 >
                   #INV-{String(transaction?.code || 1000).padStart(4, "0")}
@@ -106,7 +99,7 @@ export const PrintTransactionInvoice = React.forwardRef<
       {/* Transaction Title Banner */}
       <div className="mb-6 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <FileTextOutlined className="text-xl text-blue-600" />
+          <FileTextOutlined className="text-xl text-blue-600 shrink-0" />
           <div>
             <p className="text-[11px] font-bold text-slate-500 m-0 leading-tight mb-0.5">
               اسم المعاملة / الخدمة
@@ -119,9 +112,9 @@ export const PrintTransactionInvoice = React.forwardRef<
         <div className="text-left shrink-0">
           <span
             data-pdf-badge="status"
-            className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300/50"
+            className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300/50 leading-none"
           >
-            {transaction?.status || "قيد التنفيذ"}
+            <span className="inline-block leading-none pt-0.5">{transaction?.status || "قيد التنفيذ"}</span>
           </span>
         </div>
       </div>
@@ -266,7 +259,7 @@ export const PrintTransactionInvoice = React.forwardRef<
       {/* Financial Summary Section */}
       <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 mb-8 shadow-xs">
         <div className="grid grid-cols-3 gap-3.5 text-center">
-          <div data-pdf-card="summary" className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+          <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-center items-center">
             <p className="text-[11px] font-bold text-slate-500 mb-1">
               إجمالي الدفعات المستلمة
             </p>
@@ -274,7 +267,7 @@ export const PrintTransactionInvoice = React.forwardRef<
               {totalPatches.toLocaleString()} ج.م
             </p>
           </div>
-          <div data-pdf-card="summary" className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+          <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-center items-center">
             <p className="text-[11px] font-bold text-slate-500 mb-1">
               إجمالي المصروفات والتكاليف
             </p>
@@ -283,8 +276,7 @@ export const PrintTransactionInvoice = React.forwardRef<
             </p>
           </div>
           <div
-            data-pdf-card="summary"
-            className={`p-3.5 rounded-xl border shadow-xs ${
+            className={`p-3.5 rounded-xl border shadow-xs flex flex-col justify-center items-center ${
               isCreditor
                 ? "bg-emerald-50/80 border-emerald-200 text-emerald-900"
                 : "bg-rose-50/80 border-rose-200 text-rose-900"

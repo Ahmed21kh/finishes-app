@@ -12,6 +12,9 @@ export interface AppContextProps {
   setSecondaryColor: (color: string) => void;
   collapsed: boolean;
   setCollapsed: (collapsed: boolean | ((prev: boolean) => boolean)) => void;
+  isMobile: boolean;
+  mobileDrawerOpen: boolean;
+  setMobileDrawerOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
   location: Location<any>;
 }
 
@@ -35,7 +38,29 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
   });
 
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    return typeof window !== "undefined" ? window.innerWidth < 768 : false;
+  });
   const location = useLocation();
+
+  // Listen to window resize for responsive breakpoints
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile && mobileDrawerOpen) {
+        setMobileDrawerOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [mobileDrawerOpen]);
+
+  // Automatically close mobile menu on route changes
+  useEffect(() => {
+    setMobileDrawerOpen(false);
+  }, [location.pathname]);
 
   // Synchronize dark class on documentElement for Tailwind dark mode
   useEffect(() => {
@@ -80,6 +105,9 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
     setSecondaryColor,
     collapsed,
     setCollapsed,
+    isMobile,
+    mobileDrawerOpen,
+    setMobileDrawerOpen,
     location,
   };
 

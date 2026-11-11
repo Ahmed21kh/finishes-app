@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Col, Flex, Row, Tooltip, Tag, Modal, Skeleton, Input } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
   deleteAccountStatementApi,
@@ -130,6 +130,12 @@ export const AccountStatementDetails = () => {
     grandBalance: 0,
     isCreditor: false,
   };
+
+  useEffect(() => {
+    if (client?.clientName) {
+      document.title = `شطب - كشف حساب: ${client.clientName}`;
+    }
+  }, [client?.clientName]);
 
   const [searchText, setSearchText] = useState("");
 
@@ -458,10 +464,14 @@ export const AccountStatementDetails = () => {
       </div>
 
       {/* Modal: Add or Edit Transaction */}
-      {client && (
+      {client && transactionModalOpen && (
         <AddEditTransactionModal
+          key={`tx-modal-${id}-${editingTransaction?._id || "new"}`}
           visible={transactionModalOpen}
-          onClose={() => setTransactionModalOpen(false)}
+          onClose={() => {
+            setTransactionModalOpen(false);
+            setEditingTransaction(null);
+          }}
           accountStatementId={id as string}
           clientName={client?.clientName || ""}
           editingTransaction={editingTransaction}
@@ -625,16 +635,18 @@ export const AccountStatementDetails = () => {
       {/* Modal: Single Transaction Invoice Print Preview */}
       <ModalComponent
         width={850}
+        style={{ maxWidth: "calc(100vw - 20px)", margin: "10px auto" }}
+        className="!max-w-[calc(100vw-20px)]"
         title={
-          <div className="flex items-center gap-2">
-            <PrinterFilled className="text-blue-500" />
-            <span>معاينة طباعة الفاتورة: {selectedTransactionForPrint?.title}</span>
+          <div className="flex items-center gap-2 text-sm sm:text-base font-bold truncate">
+            <PrinterFilled className="text-blue-500 shrink-0" />
+            <span className="truncate">معاينة طباعة الفاتورة: {selectedTransactionForPrint?.title}</span>
           </div>
         }
         open={openInvoicePrintModal}
         onCancel={() => setOpenInvoicePrintModal(false)}
         footer={
-          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 w-full">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 w-full">
             <div className="flex items-center gap-2 flex-wrap">
               <ButtonComponent
                 icon={<WhatsAppOutlined />}
@@ -645,7 +657,7 @@ export const AccountStatementDetails = () => {
                     client
                   )
                 }
-                className="!bg-emerald-600 hover:!bg-emerald-500 text-white font-bold shadow-xs"
+                className="btn-whatsapp font-bold shadow-xs flex-1 sm:flex-none text-xs sm:text-sm"
               />
               <ButtonComponent
                 icon={<FileExcelOutlined />}
@@ -656,7 +668,7 @@ export const AccountStatementDetails = () => {
                     client
                   )
                 }
-                className="!text-emerald-700 dark:!text-emerald-400 !border-emerald-500/40 hover:!bg-emerald-50 dark:hover:!bg-emerald-950/30 font-bold"
+                className="btn-excel font-bold flex-1 sm:flex-none text-xs sm:text-sm"
               />
               <ButtonComponent
                 icon={<DownloadOutlined />}
@@ -667,7 +679,7 @@ export const AccountStatementDetails = () => {
                     `فاتورة-${selectedTransactionForPrint?.title || "معاملة"}`
                   )
                 }
-                className="font-bold"
+                className="font-bold flex-1 sm:flex-none text-xs sm:text-sm"
               />
             </div>
 
@@ -675,13 +687,14 @@ export const AccountStatementDetails = () => {
               <ButtonComponent
                 text="إلغاء"
                 onClick={() => setOpenInvoicePrintModal(false)}
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
               />
               <ButtonComponent
                 type="primary"
                 icon={<PrinterFilled />}
                 text="طباعة الفاتورة الآن"
                 onClick={() => printInvoiceFn()}
-                className="font-bold shadow-sm"
+                className="font-bold shadow-sm flex-1 sm:flex-none text-xs sm:text-sm"
               />
             </div>
           </div>
@@ -701,35 +714,38 @@ export const AccountStatementDetails = () => {
       {/* Modal: Full Account Statement Print Preview */}
       <ModalComponent
         width={850}
+        style={{ maxWidth: "calc(100vw - 20px)", margin: "10px auto" }}
+        className="!max-w-[calc(100vw-20px)]"
         title={
-          <div className="flex items-center gap-2">
-            <PrinterFilled className="text-blue-500" />
-            <span>معاينة كشف الحساب الشامل: {client?.clientName}</span>
+          <div className="flex items-center gap-2 text-sm sm:text-base font-bold truncate">
+            <PrinterFilled className="text-blue-500 shrink-0" />
+            <span className="truncate">معاينة كشف الحساب الشامل: {client?.clientName}</span>
           </div>
         }
         open={openStatementPrintModal}
         onCancel={() => setOpenStatementPrintModal(false)}
         footer={
-          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 w-full">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 w-full">
             <ButtonComponent
               icon={<FileExcelOutlined />}
               text="تصدير كشف الحساب إكسيل"
               onClick={() =>
                 exportFullStatementToExcel(client!, transactions, summary)
               }
-              className="!text-emerald-700 dark:!text-emerald-400 !border-emerald-500/40 hover:!bg-emerald-50 dark:hover:!bg-emerald-950/30 font-bold"
+              className="btn-excel font-bold text-xs sm:text-sm w-full sm:w-auto"
             />
             <div className="flex items-center gap-2">
               <ButtonComponent
                 text="إلغاء"
                 onClick={() => setOpenStatementPrintModal(false)}
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
               />
               <ButtonComponent
                 type="primary"
                 icon={<PrinterFilled />}
-                text="طباعة كشف الحساب الشامل"
+                text="طباعة كشف الحساب"
                 onClick={() => printStatementFn()}
-                className="font-bold shadow-sm"
+                className="font-bold shadow-sm flex-1 sm:flex-none text-xs sm:text-sm"
               />
             </div>
           </div>
@@ -831,20 +847,20 @@ export const AccountStatementDetails = () => {
               subtitle={`كود العميل #${client?.code || "—"} • سجل الحساب والمعاملات`}
               icon={<IdcardOutlined />}
               extra={
-                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full lg:w-auto">
                   <ButtonComponent
                     type="primary"
                     icon={<PlusOutlined />}
                     text="إضافة معاملة جديدة"
                     onClick={handleOpenAddTransaction}
-                    className="font-bold shadow-sm"
+                    className="font-bold shadow-sm flex-1 sm:flex-none text-xs sm:text-sm"
                   />
 
                   <ButtonComponent
                     icon={<PrinterFilled />}
                     text="طباعة كشف الحساب"
                     onClick={() => setOpenStatementPrintModal(true)}
-                    className="shadow-xs font-semibold"
+                    className="shadow-xs font-semibold flex-1 sm:flex-none text-xs sm:text-sm"
                   />
 
                   <Tooltip
@@ -869,8 +885,8 @@ export const AccountStatementDetails = () => {
                       }
                       className={
                         client?.isActive === false
-                          ? "!border-emerald-500 !text-emerald-600 hover:!bg-emerald-50 dark:hover:!bg-emerald-950/30 font-bold shadow-xs"
-                          : "!border-amber-500/80 !text-amber-600 hover:!bg-amber-50 dark:hover:!bg-amber-950/30 font-bold shadow-xs"
+                          ? "!border-emerald-500 !text-emerald-600 hover:!bg-emerald-50 dark:hover:!bg-emerald-950/30 font-bold shadow-xs flex-1 sm:flex-none text-xs sm:text-sm"
+                          : "!border-amber-500/80 !text-amber-600 hover:!bg-amber-50 dark:hover:!bg-amber-950/30 font-bold shadow-xs flex-1 sm:flex-none text-xs sm:text-sm"
                       }
                       loading={loadingToggleStatus}
                       onClick={handleToggleStatus}
@@ -901,7 +917,7 @@ export const AccountStatementDetails = () => {
             />
 
             {/* Financial Stat Cards (Summary across all transactions) */}
-            <Row gutter={[16, 16]}>
+            <Row gutter={[12, 12]}>
               <Col xs={24} sm={12} lg={6}>
                 <StatCard
                   label="إجمالي المعاملات"

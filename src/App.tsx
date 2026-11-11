@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { ConfigProvider, Flex, Layout, theme } from "antd";
 import RouterContainer from "./routes/RouterContainer";
 import { AppContext } from "./context/AppContext";
@@ -12,7 +12,7 @@ import "./App.css";
 import ButtonComponent from "./components/ButtonComponent";
 import AmbientBackground from "./components/AmbientBackground";
 import { LeftOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const { Content } = Layout;
 
@@ -29,8 +29,45 @@ const queryClient = new QueryClient({
 
 export const App: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { themeMode, primaryColor } = useContext(AppContext);
   const isDark = themeMode === "dark";
+
+  // Dynamic Window & Page Title
+  useEffect(() => {
+    const path = location.pathname;
+    let pageName = "";
+
+    if (path.includes("/account-statement/add-account")) {
+      pageName = "فتح كشف حساب جديد";
+    } else if (path.includes("/account-statement/edit-account")) {
+      pageName = "تعديل كشف الحساب";
+    } else if (path === "/account-statement" || path === "/account-statement/") {
+      pageName = "كشوفات حساب العملاء";
+    } else if (path.includes("/payments-and-patches")) {
+      pageName = "المصروفات والمدفوعات";
+    } else if (path.includes("/settings")) {
+      pageName = "إعدادات المظهر والثيم";
+    } else if (path.includes("/invoices/add-invoice")) {
+      pageName = "إضافة فاتورة";
+    } else if (path.includes("/invoices")) {
+      pageName = "سجل الفواتير";
+    } else if (path.includes("/add-apartment")) {
+      pageName = "إضافة شقة";
+    } else if (path.includes("/edit-apartment")) {
+      pageName = "تعديل شقة";
+    } else if (path.includes("/apartment")) {
+      pageName = "تفاصيل الشقة";
+    } else if (path.startsWith("/account-statement/")) {
+      pageName = "تفاصيل كشف الحساب";
+    }
+
+    if (pageName) {
+      document.title = `شطب - ${pageName}`;
+    } else {
+      document.title = "شطب";
+    }
+  }, [location.pathname]);
 
   const goBack = () => {
     navigate(-1);
@@ -103,25 +140,23 @@ export const App: React.FC = () => {
 
               <Content
                 id="main-content"
-                className="flex-1 overflow-y-auto p-4 sm:p-6 transition-colors"
+                className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 transition-colors"
                 style={{ direction: "rtl" }}
               >
                 <div className="max-w-7xl mx-auto w-full space-y-4">
-                  <Flex
-                    justify="space-between"
-                    align="center"
-                    className="mb-2"
-                  >
-                    <BreadcrumbComponent />
+                  <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
+                    <div className="overflow-x-auto whitespace-nowrap max-w-[calc(100vw-110px)] sm:max-w-none py-1">
+                      <BreadcrumbComponent />
+                    </div>
                     <ButtonComponent
                       type="default"
                       icon={<LeftOutlined />}
                       text="رجوع"
                       ariaLabel="رجوع للصفحة السابقة"
                       onClick={goBack}
-                      className="flex items-center gap-1.5 rounded-xl hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                      className="flex items-center gap-1 rounded-xl hover:border-blue-400 dark:hover:border-blue-500 shadow-sm shrink-0 px-2.5 sm:px-3 text-xs sm:text-sm"
                     />
-                  </Flex>
+                  </div>
 
                   <main className="w-full pb-8">
                     <RouterContainer />

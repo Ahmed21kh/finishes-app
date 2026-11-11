@@ -353,4 +353,106 @@ select:-webkit-autofill,
   animation: ambientFloat4 22s ease-in-out infinite;
 }
 
+/* ============================================
+   Custom Action Buttons (WhatsApp & Excel)
+   Prevents Ant Design from overriding hover text color
+   ============================================ */
+.ant-btn.btn-whatsapp,
+.ant-btn.btn-whatsapp:focus {
+  background-color: #059669 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+.ant-btn.btn-whatsapp:hover {
+  background-color: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+
+.ant-btn.btn-whatsapp:active {
+  background-color: #047857 !important;
+  border-color: #047857 !important;
+  color: #ffffff !important;
+}
+
+.ant-btn.btn-whatsapp *,
+.ant-btn.btn-whatsapp:hover *,
+.ant-btn.btn-whatsapp:focus *,
+.ant-btn.btn-whatsapp:active * {
+  color: #ffffff !important;
+}
+
+.ant-btn.btn-excel {
+  color: #047857 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+.ant-btn.btn-excel:hover {
+  background-color: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  color: #065f46 !important;
+}
+
+.dark .ant-btn.btn-excel {
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.dark .ant-btn.btn-excel:hover {
+  background-color: rgba(6, 78, 59, 0.3) !important;
+  border-color: #10b981 !important;
+  color: #6ee7b7 !important;
+}
+
+.ant-btn.btn-excel *,
+.ant-btn.btn-excel:hover *,
+.ant-btn.btn-excel:focus * {
+  color: inherit !important;
+}
+
+/* ============================================
+   Responsive Utilities & Small Screen Tweaks
+   ============================================ */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media (max-width: 767px) {
+  /* Ensure Ant Design modals never overflow viewport width on phones */
+  .ant-modal {
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+    padding: 0 !important;
+  }
+  
+  .ant-modal .ant-modal-content {
+    padding: 14px 14px !important;
+    border-radius: 16px !important;
+  }
+
+  .ant-modal .ant-modal-header {
+    margin-bottom: 12px !important;
+  }
+
+  /* Table horizontal touch scroll and compact cells */
+  .ant-table-wrapper {
+    max-width: 100% !important;
+  }
+
+  .ant-table {
+    font-size: 12px !important;
+  }
+
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    padding: 8px 10px !important;
+  }
+}
+
+
 

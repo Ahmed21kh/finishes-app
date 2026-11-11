@@ -77,7 +77,7 @@ export const FilterComponent: React.FC<FilterCompProps> = ({
           </Col>
         ))}
 
-        <Col className="flex gap-2 items-center mr-auto">
+        <Col xs={24} sm="auto" className="flex flex-wrap sm:flex-nowrap gap-2 items-center mr-auto w-full sm:w-auto justify-end sm:justify-start pt-1 sm:pt-0">
           <ButtonComponent
             htmlType="submit"
             type="primary"
@@ -85,7 +85,7 @@ export const FilterComponent: React.FC<FilterCompProps> = ({
             icon={<SearchOutlined />}
             text={okText}
             tooltipTitle={okText}
-            className="shadow-sm"
+            className="shadow-sm flex-1 sm:flex-none font-semibold"
           />
           {clear && (
             <ButtonComponent
@@ -96,7 +96,7 @@ export const FilterComponent: React.FC<FilterCompProps> = ({
               text={cancelText}
               ariaLabel={cancelText}
               tooltipTitle={cancelText}
-              className="hover:border-red-300 hover:text-red-500"
+              className="hover:border-red-300 hover:text-red-500 flex-1 sm:flex-none font-semibold"
             />
           )}
         </Col>

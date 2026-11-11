@@ -409,7 +409,7 @@ export const AccountStatements = () => {
               text="فتح كشف حساب جديد"
               icon={<PlusOutlined />}
               onClick={() => navigate("/account-statement/add-account")}
-              className="shadow-sm font-semibold"
+              className="shadow-sm font-semibold w-full sm:w-auto text-xs sm:text-sm"
             />
           }
         />
@@ -422,21 +422,23 @@ export const AccountStatements = () => {
           onSubmit={handleSubmit(handleFilter)}
         />
 
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#15151c] p-3.5 rounded-2xl border border-gray-200/80 dark:border-neutral-800 shadow-xs">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-xs font-bold text-gray-600 dark:text-gray-300">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-[#15151c] p-3 sm:p-3.5 rounded-2xl border border-gray-200/80 dark:border-neutral-800 shadow-xs">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
+            <span className="text-xs font-bold text-gray-600 dark:text-gray-300 shrink-0">
               تصفية حسب حالة الحساب:
             </span>
-            <Segmented
-              value={statusFilter}
-              onChange={handleStatusFilterChange}
-              options={[
-                { label: "جميع الحسابات", value: "all" },
-                { label: "الحسابات النشطة فقط", value: "active" },
-                { label: "الحسابات المعطلة فقط", value: "inactive" },
-              ]}
-              className="font-cairo font-semibold"
-            />
+            <div className="overflow-x-auto max-w-full pb-1 sm:pb-0">
+              <Segmented
+                value={statusFilter}
+                onChange={handleStatusFilterChange}
+                options={[
+                  { label: "جميع الحسابات", value: "all" },
+                  { label: "الحسابات النشطة فقط", value: "active" },
+                  { label: "الحسابات المعطلة فقط", value: "inactive" },
+                ]}
+                className="font-cairo font-semibold"
+              />
+            </div>
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
             إجمالي الحسابات المعروضة:{" "}

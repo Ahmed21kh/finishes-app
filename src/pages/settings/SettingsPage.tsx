@@ -94,7 +94,7 @@ export const SettingsPage: React.FC = () => {
             icon={<ReloadOutlined />}
             text="استعادة الافتراضي"
             onClick={resetDefaults}
-            className="rounded-xl"
+            className="rounded-xl w-full sm:w-auto text-xs sm:text-sm"
           />
         }
       />

@@ -189,24 +189,24 @@ export const FormComponent: React.FC<FormCompProps> = ({
           <Col
             dir="rtl"
             xs={24}
-            className="flex justify-end items-center gap-3 pt-4 border-t border-gray-100 dark:border-neutral-800"
+            className="flex flex-col-reverse sm:flex-row justify-end items-stretch sm:items-center gap-2.5 sm:gap-3 pt-4 border-t border-gray-100 dark:border-neutral-800"
           >
+            {onCancel && (
+              <ButtonComponent
+                text={cancelText}
+                size="large"
+                onClick={onCancel}
+                className="w-full sm:w-auto px-6"
+              />
+            )}
             <ButtonComponent
               htmlType="submit"
               text={okText}
               type="primary"
               size="large"
               loading={loading}
-              className="px-6 font-semibold shadow-sm"
+              className="w-full sm:w-auto px-6 font-semibold shadow-sm"
             />
-            {onCancel && (
-              <ButtonComponent
-                text={cancelText}
-                size="large"
-                onClick={onCancel}
-                className="px-6"
-              />
-            )}
           </Col>
         )}
       </Row>

@@ -27,11 +27,16 @@ import {
   ShoppingOutlined,
   CalendarOutlined,
   ArrowRightOutlined,
+  WhatsAppOutlined,
+  FileExcelOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Transaction } from "../../types";
+import { exportTransactionToExcel } from "../../utils/exportExcel";
+import { sendTransactionViaWhatsApp, downloadInvoicePDF } from "../../utils/invoiceShare";
 
 export const PaymentsAndPatches = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -39,14 +44,21 @@ export const PaymentsAndPatches = () => {
   const queryClient = useQueryClient();
   const { confirm, contextHolder } = useConfirmDialog();
 
-  const [clientId, setClientId] = useState<string | null>(null);
-  const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [clientId, setClientId] = useState<string | null>(() => {
+    return searchParams.get("client") || null;
+  });
+  const [transactionId, setTransactionId] = useState<string | null>(() => {
+    return searchParams.get("transaction") || null;
+  });
+
+  const isInternalChangeRef = useRef(false);
 
   // Modal & Print States
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [openPrintModal, setOpenPrintModal] = useState(false);
   const invoicePrintRef = useRef<HTMLDivElement>(null);
+  const modalInvoiceRef = useRef<HTMLDivElement>(null);
 
   const fetchClientNames = () => {
     return getAccountStatementsNames();
@@ -69,6 +81,12 @@ export const PaymentsAndPatches = () => {
   const selectedTransaction = transactions.find(
     (t: Transaction) => t._id === transactionId
   );
+
+  // Instant client name resolution without waiting for clientData query
+  const selectedClientInfo = clients?.clientsNames?.find(
+    (c: any) => String(c.id) === String(clientId)
+  );
+  const currentClientName = selectedClientInfo?.name || client?.clientName || "";
 
   // Print function
   const printInvoiceFn = useReactToPrint({
@@ -119,46 +137,88 @@ export const PaymentsAndPatches = () => {
     });
   };
 
-  const updateSearchParams = (newParams: any) => {
-    setSearchParams((prevParams) => {
-      const updatedParams = new URLSearchParams(prevParams);
-      Object.keys(newParams).forEach((key) => {
-        if (newParams[key]) {
-          updatedParams.set(key, newParams[key]);
-        } else {
-          updatedParams.delete(key);
-        }
-      });
-      return updatedParams;
-    });
-  };
-
   const changeClient = (value: any) => {
-    setClientId(value);
+    const newClientId = value || null;
+    isInternalChangeRef.current = true;
+    setClientId(newClientId);
     setTransactionId(null);
-    updateSearchParams({ client: value, transaction: null });
+    setSearchParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        if (newClientId) {
+          p.set("client", newClientId);
+        } else {
+          p.delete("client");
+        }
+        p.delete("transaction");
+        return p;
+      },
+      { replace: true }
+    );
   };
 
   const changeTransaction = (value: any) => {
-    setTransactionId(value);
-    updateSearchParams({ transaction: value });
+    const newTxId = value || null;
+    isInternalChangeRef.current = true;
+    setTransactionId(newTxId);
+    setSearchParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        if (newTxId) {
+          p.set("transaction", newTxId);
+        } else {
+          p.delete("transaction");
+        }
+        return p;
+      },
+      { replace: true }
+    );
   };
 
+  // Sync only on external searchParams change (browser back/forward or direct navigation)
   useEffect(() => {
-    const urlClient = searchParams.get("client");
-    const urlTransaction = searchParams.get("transaction");
-    if (urlClient) {
+    if (isInternalChangeRef.current) {
+      isInternalChangeRef.current = false;
+      return;
+    }
+    const urlClient = searchParams.get("client") || null;
+    const urlTransaction = searchParams.get("transaction") || null;
+    if (urlClient !== clientId) {
       setClientId(urlClient);
     }
-    if (urlTransaction) {
+    if (urlTransaction !== transactionId) {
       setTransactionId(urlTransaction);
     }
   }, [searchParams]);
 
   const handleTransactionSaved = (savedTx: Transaction, shouldPrint?: boolean) => {
-    queryClient.invalidateQueries(["clientTransactions", clientId]);
+    // Invalidate client transactions across the system
+    queryClient.invalidateQueries(["clientTransactions"]);
     queryClient.invalidateQueries(["accountStatements"]);
-    setTransactionId(savedTx._id || null);
+    queryClient.invalidateQueries(["clientsNames"]);
+
+    const targetClientId = savedTx.accountStatement
+      ? String(savedTx.accountStatement)
+      : clientId;
+
+    if (targetClientId && targetClientId !== clientId) {
+      isInternalChangeRef.current = true;
+      setClientId(targetClientId);
+    }
+
+    if (savedTx._id) {
+      isInternalChangeRef.current = true;
+      setTransactionId(savedTx._id);
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          if (targetClientId) p.set("client", targetClientId);
+          p.set("transaction", savedTx._id!);
+          return p;
+        },
+        { replace: true }
+      );
+    }
 
     if (shouldPrint) {
       setOpenPrintModal(true);
@@ -195,12 +255,16 @@ export const PaymentsAndPatches = () => {
       </div>
 
       {/* Modal: Add or Edit Transaction */}
-      {clientId && client && (
+      {Boolean(clientId) && transactionModalOpen && (
         <AddEditTransactionModal
+          key={`tx-modal-${clientId}-${editingTransaction?._id || "new"}`}
           visible={transactionModalOpen}
-          onClose={() => setTransactionModalOpen(false)}
-          accountStatementId={clientId}
-          clientName={client.clientName}
+          onClose={() => {
+            setTransactionModalOpen(false);
+            setEditingTransaction(null);
+          }}
+          accountStatementId={clientId as string}
+          clientName={currentClientName}
           editingTransaction={editingTransaction}
           onSuccess={handleTransactionSaved}
         />
@@ -209,29 +273,72 @@ export const PaymentsAndPatches = () => {
       {/* Modal: Print Invoice Preview */}
       <ModalComponent
         width={850}
+        style={{ maxWidth: "calc(100vw - 20px)", margin: "10px auto" }}
+        className="!max-w-[calc(100vw-20px)]"
         title={
-          <div className="flex items-center gap-2">
-            <PrinterFilled className="text-blue-500" />
-            <span>معاينة طباعة الفاتورة: {selectedTransaction?.title}</span>
+          <div className="flex items-center gap-2 text-sm sm:text-base font-bold truncate">
+            <PrinterFilled className="text-blue-500 shrink-0" />
+            <span className="truncate">معاينة طباعة الفاتورة: {selectedTransaction?.title}</span>
           </div>
         }
         open={openPrintModal}
         onCancel={() => setOpenPrintModal(false)}
         footer={
-          <div className="flex justify-end gap-3 pt-2">
-            <ButtonComponent text="إلغاء" onClick={() => setOpenPrintModal(false)} />
-            <ButtonComponent
-              type="primary"
-              icon={<PrinterFilled />}
-              text="طباعة الفاتورة الآن"
-              onClick={() => printInvoiceFn()}
-            />
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 w-full">
+            <div className="flex items-center gap-2 flex-wrap">
+              {selectedTransaction && client && (
+                <>
+                  <ButtonComponent
+                    icon={<WhatsAppOutlined />}
+                    text="مشاركة عبر واتساب"
+                    onClick={() =>
+                      sendTransactionViaWhatsApp(selectedTransaction, client)
+                    }
+                    className="btn-whatsapp font-bold shadow-xs flex-1 sm:flex-none text-xs sm:text-sm"
+                  />
+                  <ButtonComponent
+                    icon={<FileExcelOutlined />}
+                    text="تصدير إكسيل"
+                    onClick={() =>
+                      exportTransactionToExcel(selectedTransaction, client)
+                    }
+                    className="btn-excel font-bold flex-1 sm:flex-none text-xs sm:text-sm"
+                  />
+                  <ButtonComponent
+                    icon={<DownloadOutlined />}
+                    text="تحميل PDF"
+                    onClick={() =>
+                      downloadInvoicePDF(
+                        modalInvoiceRef.current || invoicePrintRef.current,
+                        `فاتورة-${selectedTransaction.title || "معاملة"}`
+                      )
+                    }
+                    className="font-bold flex-1 sm:flex-none text-xs sm:text-sm"
+                  />
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <ButtonComponent
+                text="إلغاء"
+                onClick={() => setOpenPrintModal(false)}
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
+              />
+              <ButtonComponent
+                type="primary"
+                icon={<PrinterFilled />}
+                text="طباعة الفاتورة الآن"
+                onClick={() => printInvoiceFn()}
+                className="font-bold shadow-sm flex-1 sm:flex-none text-xs sm:text-sm"
+              />
+            </div>
           </div>
         }
       >
         {selectedTransaction && client && (
           <div className="max-h-[75vh] overflow-y-auto border border-gray-200 dark:border-neutral-800 rounded-xl bg-gray-50/50 p-2">
             <PrintTransactionInvoice
+              ref={modalInvoiceRef}
               transaction={selectedTransaction}
               client={client}
             />
@@ -239,14 +346,14 @@ export const PaymentsAndPatches = () => {
         )}
       </ModalComponent>
 
-      <div className="space-y-6 animate-fade-in font-cairo">
+      <div className="space-y-5 sm:space-y-6 animate-fade-in font-cairo">
         <PageHeader
           title="إدارة المصروفات والمدفوعات"
           subtitle="حدد العميل والمعاملة لعرض وتعديل كافة الدفعات والمصروفات وطباعة الفاتورة فوراً"
           icon={<DollarOutlined />}
           extra={
             clientId && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <ButtonComponent
                   type="primary"
                   icon={<PlusOutlined />}
@@ -255,12 +362,13 @@ export const PaymentsAndPatches = () => {
                     setEditingTransaction(null);
                     setTransactionModalOpen(true);
                   }}
-                  className="font-bold shadow-sm"
+                  className="font-bold shadow-sm flex-1 sm:flex-none text-xs sm:text-sm"
                 />
                 <ButtonComponent
                   icon={<FileTextOutlined />}
                   text="كشف حساب العميل الشامل"
                   onClick={() => navigate(`/account-statement/${clientId}`)}
+                  className="flex-1 sm:flex-none text-xs sm:text-sm"
                 />
               </div>
             )
@@ -327,11 +435,11 @@ export const PaymentsAndPatches = () => {
         {clientId && selectedTransaction ? (
           <div className="space-y-6 animate-fade-in">
             {/* Transaction Header Card */}
-            <CardComponent className="p-5 shadow-sm">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <CardComponent className="p-4 sm:p-5 shadow-sm">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4">
                 <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-1 flex-wrap">
+                    <h2 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white">
                       {selectedTransaction.title}
                     </h2>
                     <Tag
@@ -347,27 +455,27 @@ export const PaymentsAndPatches = () => {
                       {selectedTransaction.status || "قيد التنفيذ"}
                     </Tag>
                   </div>
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400">
                     <span className="flex items-center gap-1">
                       <CalendarOutlined />
                       التاريخ: {dayjs(selectedTransaction.date).format("YYYY/MM/DD")}
                     </span>
                     <span>العميل: {client?.clientName}</span>
                     {selectedTransaction.notes && (
-                      <span className="text-gray-400 truncate max-w-md">
+                      <span className="text-gray-400 truncate max-w-xs sm:max-w-md">
                         ملاحظات: {selectedTransaction.notes}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                   <ButtonComponent
                     type="primary"
                     icon={<PrinterFilled />}
                     text="طباعة الفاتورة"
                     onClick={() => setOpenPrintModal(true)}
-                    className="font-bold shadow-sm"
+                    className="font-bold shadow-sm flex-1 sm:flex-none text-xs sm:text-sm"
                   />
                   <ButtonComponent
                     icon={<EditFilled />}
@@ -376,12 +484,14 @@ export const PaymentsAndPatches = () => {
                       setEditingTransaction(selectedTransaction);
                       setTransactionModalOpen(true);
                     }}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
                   />
                   <Tooltip title="حذف المعاملة">
                     <ButtonComponent
                       danger
                       icon={<DeleteFilled />}
                       onClick={handleDeleteCurrentTx}
+                      className="shrink-0"
                     />
                   </Tooltip>
                 </div>
@@ -389,7 +499,7 @@ export const PaymentsAndPatches = () => {
             </CardComponent>
 
             {/* Financial Summary */}
-            <Row gutter={[16, 16]}>
+            <Row gutter={[12, 12]}>
               <Col xs={24} sm={8}>
                 <StatCard
                   label="إجمالي المصروفات والتكاليف"

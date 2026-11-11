@@ -95,13 +95,22 @@ export const sendTransactionViaWhatsApp = (
 /**
  * Download Printable Invoice Element directly as A4 PDF
  */
-export const downloadInvoicePDF = (
+export const downloadInvoicePDF = async (
   element: HTMLElement | null,
   fileName: string = "فاتورة"
 ) => {
   if (!element) {
     toast.error("عنصر الفاتورة غير جاهز للتحميل");
     return;
+  }
+
+  // Ensure fonts (like Cairo) are completely ready before canvas capture
+  if (document.fonts) {
+    try {
+      await document.fonts.ready;
+    } catch (e) {
+      // Continue if fonts.ready is not supported
+    }
   }
 
   // Scroll parent container to top so html2canvas captures from (0,0) without scroll displacement
@@ -122,36 +131,15 @@ export const downloadInvoicePDF = (
       scrollY: 0,
       scrollX: 0,
       onclone: (clonedDoc: Document) => {
-        // Compensate Cairo font baseline metrics in html2canvas (ONLY for PDF generation)
-        // 1. Invoice Title Badge ('فاتورة معاملة')
-        clonedDoc.querySelectorAll<HTMLElement>('[data-pdf-badge="title"]').forEach((badge) => {
-          badge.style.setProperty("padding-top", "1px", "important");
-          badge.style.setProperty("padding-bottom", "8px", "important");
-          badge.style.setProperty("line-height", "1.2", "important");
-          badge.style.setProperty("display", "inline-block", "important");
-        });
-
-        // 2. Status Badge ('مكتملة' / 'قيد التنفيذ')
-        clonedDoc.querySelectorAll<HTMLElement>('[data-pdf-badge="status"]').forEach((badge) => {
-          badge.style.setProperty("padding-top", "0px", "important");
-          badge.style.setProperty("padding-bottom", "6px", "important");
-          badge.style.setProperty("line-height", "1.2", "important");
-          badge.style.setProperty("display", "inline-block", "important");
-        });
-
-        // 3. Code Badge ('#INV-1001')
-        clonedDoc.querySelectorAll<HTMLElement>('[data-pdf-badge="code"]').forEach((badge) => {
-          badge.style.setProperty("padding-top", "0px", "important");
-          badge.style.setProperty("padding-bottom", "4px", "important");
-          badge.style.setProperty("line-height", "1.2", "important");
-          badge.style.setProperty("display", "inline-block", "important");
-        });
-
-        // 4. Financial Summary Cards
-        clonedDoc.querySelectorAll<HTMLElement>('[data-pdf-card="summary"]').forEach((card) => {
-          card.style.setProperty("padding-top", "12px", "important");
-          card.style.setProperty("padding-bottom", "16px", "important");
-        });
+        // Guarantee crisp rendering and true colors in cloned document
+        const style = clonedDoc.createElement("style");
+        style.innerHTML = `
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        `;
+        clonedDoc.head.appendChild(style);
       },
     },
     jsPDF: { unit: "mm" as const, format: "a4" as const, orientation: "portrait" as const },

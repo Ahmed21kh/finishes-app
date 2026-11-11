@@ -1,9 +1,9 @@
-import { HomeFilled } from "@ant-design/icons";
 import React, { useContext } from "react";
 import { AppContext } from "../context/AppContext";
+import ShatabLogoIcon from "./ShatabLogo";
 
 export const LogoComponent: React.FC = () => {
-  const { collapsed, primaryColor, secondaryColor } = useContext(AppContext);
+  const { collapsed } = useContext(AppContext);
 
   return (
     <div
@@ -11,15 +11,8 @@ export const LogoComponent: React.FC = () => {
         collapsed ? "justify-center" : "justify-start"
       }`}
     >
-      <div
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-md text-white transition-transform duration-300 hover:scale-105"
-        style={{
-          background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
-          boxShadow: `0 4px 12px ${primaryColor}40`,
-        }}
-        aria-hidden="true"
-      >
-        <HomeFilled className="text-xl" />
+      <div className="transition-transform duration-300 hover:scale-105 shadow-md rounded-2xl shrink-0">
+        <ShatabLogoIcon size={44} />
       </div>
 
       {!collapsed && (

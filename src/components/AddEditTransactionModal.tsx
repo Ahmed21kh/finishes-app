@@ -170,6 +170,11 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
   const handleSave = async (shouldPrint: boolean = false) => {
     if (isSubmittingRef.current || saving) return;
 
+    if (!accountStatementId) {
+      toast.error("خطأ: لم يتم تحديد كشف حساب العميل");
+      return;
+    }
+
     if (!title.trim()) {
       toast.error("يرجى كتابة اسم المعاملة أو الخدمة أو الشقة");
       return;
@@ -179,7 +184,7 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
       isSubmittingRef.current = true;
       setSaving(true);
       const payload = {
-        accountStatement: accountStatementId,
+        accountStatement: String(accountStatementId),
         title: title.trim(),
         date: date.toISOString(),
         status,
@@ -216,13 +221,14 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
       open={visible}
       onCancel={onClose}
       width={900}
+      style={{ maxWidth: "calc(100vw - 20px)", margin: "10px auto" }}
       destroyOnClose
       centered
-      className="font-cairo custom-transaction-modal"
+      className="font-cairo custom-transaction-modal !max-w-[calc(100vw-20px)]"
       title={
-        <div className="flex items-center gap-2.5 text-base font-bold text-gray-900 dark:text-white pb-1">
-          <FileTextOutlined className="text-blue-500 text-lg" />
-          <span>
+        <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-gray-900 dark:text-white pb-1 truncate">
+          <FileTextOutlined className="text-blue-500 text-lg shrink-0" />
+          <span className="truncate">
             {isEdit
               ? `تعديل المعاملة: ${editingTransaction?.title || ""}`
               : `إضافة معاملة جديدة لكشف حساب: ${clientName}`}
@@ -232,18 +238,18 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
       footer={
         <div
           dir="rtl"
-          className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-200 dark:border-neutral-800"
+          className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-3 border-t border-gray-200 dark:border-neutral-800"
         >
-          <div className="text-xs font-bold text-gray-500 dark:text-gray-400">
+          <div className="text-xs font-bold text-gray-500 dark:text-gray-400 text-center sm:text-right">
             {payments.length} بنود مصروفات • {patches.length} دفعات مستلمة
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
             <ButtonComponent
               text="إلغاء"
               size="large"
               onClick={onClose}
               disabled={saving}
-              className="px-4 font-semibold"
+              className="flex-1 sm:flex-none px-3 sm:px-4 font-semibold text-xs sm:text-sm"
             />
 
             <ButtonComponent
@@ -253,7 +259,7 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
               icon={<SaveOutlined />}
               size="large"
               loading={saving}
-              className="px-5 font-semibold"
+              className="flex-1 sm:flex-none px-3 sm:px-5 font-semibold text-xs sm:text-sm"
             />
 
             {/* Quick Instant Save & Print Button */}
@@ -261,10 +267,10 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
               type="primary"
               size="large"
               icon={<PrinterOutlined />}
-              text="حفظ وطباعة الفاتورة فوراً"
+              text="حفظ وطباعة فوراً"
               onClick={() => handleSave(true)}
               loading={saving}
-              className="px-5 font-bold shadow-md !bg-gradient-to-r !from-blue-600 !to-indigo-600 hover:opacity-95"
+              className="w-full sm:w-auto px-4 sm:px-5 font-bold shadow-md !bg-gradient-to-r !from-blue-600 !to-indigo-600 hover:opacity-95 text-xs sm:text-sm"
             />
           </div>
         </div>
@@ -278,10 +284,10 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
           handleSave(false);
         }}
         onKeyDown={handleKeyDown}
-        className="space-y-6 pt-3 max-h-[68vh] overflow-y-auto px-1 pr-2"
+        className="space-y-5 sm:space-y-6 pt-3 max-h-[72vh] sm:max-h-[68vh] overflow-y-auto px-1 pr-1.5"
       >
         {/* Basic Transaction Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 dark:bg-neutral-900/60 p-4 rounded-2xl border border-gray-200/70 dark:border-neutral-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 bg-slate-50 dark:bg-neutral-900/60 p-3 sm:p-4 rounded-2xl border border-gray-200/70 dark:border-neutral-800">
           <div>
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1">
               <BarcodeOutlined className="text-blue-500" />
@@ -295,7 +301,7 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
             />
           </div>
 
-          <div className="md:col-span-2">
+          <div className="sm:col-span-1 md:col-span-2">
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
               اسم المعاملة / الخدمة / الشقة <span className="text-red-500">*</span>
             </label>
@@ -340,7 +346,7 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
             />
           </div>
 
-          <div className="md:col-span-2">
+          <div className="sm:col-span-2 md:col-span-3">
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
               ملاحظات المعاملة (اختياري)
             </label>
@@ -355,11 +361,11 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
         </div>
 
         {/* Expenses and Costs Section (المصروفات والتكاليف) */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-gray-200/80 dark:border-neutral-800 shadow-xs">
-          <div className="flex justify-between items-center mb-3">
+        <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-gray-200/80 dark:border-neutral-800 shadow-xs">
+          <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
             <div className="flex items-center gap-2">
               <ShoppingOutlined className="text-rose-500 text-lg" />
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
                 المصروفات والتكاليف المنفقة على المعاملة
               </h3>
               <span className="text-xs px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 font-bold">
@@ -372,7 +378,7 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
               icon={<PlusOutlined />}
               text="إضافة مصروف / بند"
               onClick={addPaymentRow}
-              className="!bg-rose-600 hover:!bg-rose-500 shadow-xs"
+              className="!bg-rose-600 hover:!bg-rose-500 shadow-xs text-xs font-semibold"
             />
           </div>
 
@@ -385,11 +391,22 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
               {payments.map((p, idx) => (
                 <div
                   key={idx}
-                  className="flex flex-col sm:flex-row items-center gap-2.5 p-3 rounded-xl bg-gray-50/70 dark:bg-neutral-800/40 border border-gray-200/60 dark:border-neutral-800 animate-fade-in"
+                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl bg-gray-50/70 dark:bg-neutral-800/40 border border-gray-200/60 dark:border-neutral-800 animate-fade-in"
                 >
-                  <span className="w-6 h-6 rounded-lg bg-gray-200 dark:bg-neutral-700 text-gray-700 dark:text-gray-300 flex items-center justify-center text-xs font-bold shrink-0">
-                    {idx + 1}
-                  </span>
+                  <div className="flex items-center justify-between sm:justify-start gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-gray-200 dark:bg-neutral-700 text-gray-700 dark:text-gray-300 flex items-center justify-center text-xs font-bold shrink-0">
+                      {idx + 1}
+                    </span>
+                    <Tooltip title="حذف هذا البند">
+                      <button
+                        type="button"
+                        onClick={() => removePaymentRow(idx)}
+                        className="sm:hidden w-7 h-7 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-colors shrink-0"
+                      >
+                        <DeleteOutlined />
+                      </button>
+                    </Tooltip>
+                  </div>
 
                   <Input
                     placeholder="اسم البند (مثال: أسمنت، سيراميك، دهانات)"
@@ -398,42 +415,44 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
                     className="flex-1 !rounded-lg"
                   />
 
-                  <Input
-                    type="number"
-                    placeholder="التكلفة"
-                    suffix={<span className="text-gray-400 text-xs select-none">ج.م</span>}
-                    value={p.price}
-                    onChange={(e) => updatePaymentField(idx, "price", e.target.value)}
-                    className="w-full sm:w-36 !rounded-lg"
-                    min={0}
-                  />
+                  <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+                    <Input
+                      type="number"
+                      placeholder="التكلفة"
+                      suffix={<span className="text-gray-400 text-xs select-none">ج.م</span>}
+                      value={p.price}
+                      onChange={(e) => updatePaymentField(idx, "price", e.target.value)}
+                      className="w-full sm:w-32 md:w-36 !rounded-lg"
+                      min={0}
+                    />
 
-                  <DatePicker
-                    value={p.date ? dayjs(p.date) : dayjs()}
-                    onChange={(d) =>
-                      updatePaymentField(
-                        idx,
-                        "date",
-                        d ? d.toISOString() : new Date().toISOString()
-                      )
-                    }
-                    className="w-full sm:w-36 !rounded-lg"
-                    format="YYYY/MM/DD"
-                    allowClear={false}
-                  />
+                    <DatePicker
+                      value={p.date ? dayjs(p.date) : dayjs()}
+                      onChange={(d) =>
+                        updatePaymentField(
+                          idx,
+                          "date",
+                          d ? d.toISOString() : new Date().toISOString()
+                        )
+                      }
+                      className="w-full sm:w-32 md:w-36 !rounded-lg"
+                      format="YYYY/MM/DD"
+                      allowClear={false}
+                    />
+                  </div>
 
                   <Input
                     placeholder="ملاحظات البند..."
                     value={p.notes}
                     onChange={(e) => updatePaymentField(idx, "notes", e.target.value)}
-                    className="w-full sm:w-44 !rounded-lg"
+                    className="w-full sm:w-36 md:w-44 !rounded-lg"
                   />
 
                   <Tooltip title="حذف هذا البند">
                     <button
                       type="button"
                       onClick={() => removePaymentRow(idx)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-colors shrink-0 mr-auto sm:mr-0"
+                      className="hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-colors shrink-0"
                     >
                       <DeleteOutlined />
                     </button>
@@ -445,11 +464,11 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
         </div>
 
         {/* Received Patches Section (الدفعات المستلمة) */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-gray-200/80 dark:border-neutral-800 shadow-xs">
-          <div className="flex justify-between items-center mb-3">
+        <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-gray-200/80 dark:border-neutral-800 shadow-xs">
+          <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
             <div className="flex items-center gap-2">
               <DollarCircleOutlined className="text-emerald-500 text-lg" />
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
                 الدفعات المستلمة من العميل لهذه المعاملة
               </h3>
               <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 font-bold">
@@ -462,7 +481,7 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
               icon={<PlusOutlined />}
               text="إضافة دفعة مستلمة"
               onClick={addPatchRow}
-              className="!bg-emerald-600 hover:!bg-emerald-500 shadow-xs"
+              className="!bg-emerald-600 hover:!bg-emerald-500 shadow-xs text-xs font-semibold"
             />
           </div>
 
@@ -475,35 +494,48 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
               {patches.map((p, idx) => (
                 <div
                   key={idx}
-                  className="flex flex-col sm:flex-row items-center gap-2.5 p-3 rounded-xl bg-gray-50/70 dark:bg-neutral-800/40 border border-gray-200/60 dark:border-neutral-800 animate-fade-in"
+                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl bg-gray-50/70 dark:bg-neutral-800/40 border border-gray-200/60 dark:border-neutral-800 animate-fade-in"
                 >
-                  <span className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs font-bold shrink-0">
-                    {idx + 1}
-                  </span>
+                  <div className="flex items-center justify-between sm:justify-start gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs font-bold shrink-0">
+                      {idx + 1}
+                    </span>
+                    <Tooltip title="حذف الدفعة">
+                      <button
+                        type="button"
+                        onClick={() => removePatchRow(idx)}
+                        className="sm:hidden w-7 h-7 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-colors shrink-0"
+                      >
+                        <DeleteOutlined />
+                      </button>
+                    </Tooltip>
+                  </div>
 
-                  <Input
-                    type="number"
-                    placeholder="مبلغ الدفعة"
-                    suffix={<span className="text-emerald-500 text-xs font-semibold select-none">ج.م</span>}
-                    value={p.amount}
-                    onChange={(e) => updatePatchField(idx, "amount", e.target.value)}
-                    className="w-full sm:w-44 !rounded-lg"
-                    min={0}
-                  />
+                  <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+                    <Input
+                      type="number"
+                      placeholder="مبلغ الدفعة"
+                      suffix={<span className="text-emerald-500 text-xs font-semibold select-none">ج.م</span>}
+                      value={p.amount}
+                      onChange={(e) => updatePatchField(idx, "amount", e.target.value)}
+                      className="w-full sm:w-36 md:w-44 !rounded-lg"
+                      min={0}
+                    />
 
-                  <DatePicker
-                    value={p.date ? dayjs(p.date) : dayjs()}
-                    onChange={(d) =>
-                      updatePatchField(
-                        idx,
-                        "date",
-                        d ? d.toISOString() : new Date().toISOString()
-                      )
-                    }
-                    className="w-full sm:w-40 !rounded-lg"
-                    format="YYYY/MM/DD"
-                    allowClear={false}
-                  />
+                    <DatePicker
+                      value={p.date ? dayjs(p.date) : dayjs()}
+                      onChange={(d) =>
+                        updatePatchField(
+                          idx,
+                          "date",
+                          d ? d.toISOString() : new Date().toISOString()
+                        )
+                      }
+                      className="w-full sm:w-36 md:w-40 !rounded-lg"
+                      format="YYYY/MM/DD"
+                      allowClear={false}
+                    />
+                  </div>
 
                   <Input
                     placeholder="ملاحظات الدفعة (مثال: كاش / تحويل فودافون كاش)..."
@@ -516,7 +548,7 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
                     <button
                       type="button"
                       onClick={() => removePatchRow(idx)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-colors shrink-0 mr-auto sm:mr-0"
+                      className="hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-colors shrink-0"
                     >
                       <DeleteOutlined />
                     </button>
@@ -528,13 +560,13 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
         </div>
 
         {/* Live Calculation Banner */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/50 via-slate-50 to-indigo-50/50 dark:from-neutral-900 dark:via-neutral-850 dark:to-neutral-900 border border-gray-200/80 dark:border-neutral-800">
-          <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-blue-50/50 via-slate-50 to-indigo-50/50 dark:from-neutral-900 dark:via-neutral-850 dark:to-neutral-900 border border-gray-200/80 dark:border-neutral-800">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 text-center">
             <div className="p-2.5 rounded-xl bg-white dark:bg-neutral-800 shadow-xs border border-gray-200/60 dark:border-neutral-700">
               <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-0.5">
                 إجمالي المصروفات
               </p>
-              <p className="text-base font-black text-rose-600 dark:text-rose-400">
+              <p className="text-sm sm:text-base font-black text-rose-600 dark:text-rose-400">
                 {totalPayments.toLocaleString()} ج.م
               </p>
             </div>
@@ -542,7 +574,7 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
               <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-0.5">
                 إجمالي الدفعات
               </p>
-              <p className="text-base font-black text-emerald-600 dark:text-emerald-400">
+              <p className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400">
                 {totalPatches.toLocaleString()} ج.م
               </p>
             </div>
@@ -556,7 +588,7 @@ export const AddEditTransactionModal: React.FC<AddEditTransactionModalProps> = (
               <p className="text-[11px] font-bold mb-0.5">
                 {isCreditor ? "الصافي للعميل (له)" : "الصافي على العميل (عليه)"}
               </p>
-              <p className="text-base font-black">
+              <p className="text-sm sm:text-base font-black">
                 {Math.abs(balance).toLocaleString()} ج.م
               </p>
             </div>
