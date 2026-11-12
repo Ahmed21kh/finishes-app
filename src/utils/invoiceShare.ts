@@ -113,50 +113,115 @@ export const downloadInvoicePDF = async (
     }
   }
 
-  // Scroll parent container to top so html2canvas captures from (0,0) without scroll displacement
-  const scrollParent = element.closest(".overflow-y-auto") as HTMLElement | null;
-  const originalScrollTop = scrollParent ? scrollParent.scrollTop : 0;
-  if (scrollParent) {
-    scrollParent.scrollTop = 0;
-  }
-  
+  // Off-screen copy used only to measure the A4 layout. The PDF library
+  // clones it into its own hidden layer, so this one must stay invisible.
+  const host = document.createElement("div");
+  host.dir = "rtl";
+  host.setAttribute("aria-hidden", "true");
+  host.style.cssText = [
+    "position:fixed",
+    "left:-10000px",
+    "top:0",
+    "width:194mm",
+    "background:#ffffff",
+    "opacity:0",
+    "pointer-events:none",
+    "z-index:-1",
+    "overflow:visible",
+  ].join(";");
+
+  const clone = element.cloneNode(true) as HTMLElement;
+  clone.style.width = "100%";
+  clone.style.maxWidth = "none";
+  clone.style.margin = "0";
+  clone.style.backgroundColor = "#ffffff";
+  clone.style.boxShadow = "none";
+  host.appendChild(clone);
+  document.body.appendChild(host);
+
+  const paintHeight = Math.max(clone.scrollHeight, clone.offsetHeight, 1);
+  const scale = Math.min(2, 3600 / Math.max(clone.offsetWidth || 700, paintHeight));
+
   const opt = {
-    margin: [6, 6, 6, 6] as [number, number, number, number],
+    margin: [8, 8, 8, 8] as [number, number, number, number],
     filename: `${fileName}.pdf`,
-    image: { type: "jpeg" as const, quality: 1.0 },
+    image: { type: "jpeg" as const, quality: 0.92 },
+    pagebreak: { mode: [] as string[] },
     html2canvas: {
-      scale: 3,
+      scale,
       useCORS: true,
+      backgroundColor: "#ffffff",
       logging: false,
       scrollY: 0,
       scrollX: 0,
       onclone: (clonedDoc: Document) => {
-        // Guarantee crisp rendering and true colors in cloned document
         const style = clonedDoc.createElement("style");
-        style.innerHTML = `
+        style.textContent = `
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            filter: none !important;
           }
         `;
         clonedDoc.head.appendChild(style);
+
+        // html2canvas clips Arabic inside rounded badges (it measures a Latin
+        // baseline, then cuts anything outside the radius). Flatten each badge
+        // to one text node with room around the glyphs so the PDF matches
+        // the on-screen preview.
+        clonedDoc.querySelectorAll("[data-pdf-badge]").forEach((node) => {
+          const badge = node as HTMLElement;
+          const inner = badge.querySelector("span") as HTMLElement | null;
+          const label = (badge.textContent || "").replace(/\s+/g, " ").trim();
+          const color = inner?.style.color || badge.style.color || "#0f172a";
+          const fontSize = inner?.style.fontSize || badge.style.fontSize || "14px";
+          const bg = badge.style.backgroundColor || "#f8fafc";
+          const border = badge.style.border && badge.style.border !== "" ? badge.style.border : "none";
+          const dir = badge.getAttribute("dir");
+
+          badge.replaceChildren(clonedDoc.createTextNode(label));
+          if (dir) badge.setAttribute("dir", dir);
+
+          badge.style.display = "inline-block";
+          badge.style.width = "auto";
+          badge.style.height = "auto";
+          badge.style.backgroundColor = bg;
+          badge.style.color = color;
+          badge.style.border = border;
+          badge.style.borderRadius = "8px";
+          badge.style.fontSize = fontSize;
+          badge.style.fontWeight = "700";
+          badge.style.fontFamily = '"Cairo", sans-serif';
+          badge.style.lineHeight = "1";
+          badge.style.textAlign = "center";
+          badge.style.whiteSpace = "nowrap";
+          badge.style.overflow = "visible";
+          badge.style.verticalAlign = "middle";
+          badge.style.boxSizing = "content-box";
+          badge.style.boxShadow = "none";
+          // Canvas paints Arabic low in the chip, so keep less space above it.
+          badge.style.padding = "4px 16px 12px";
+        });
       },
     },
-    jsPDF: { unit: "mm" as const, format: "a4" as const, orientation: "portrait" as const },
+    jsPDF: {
+      unit: "mm" as const,
+      format: "a4" as const,
+      orientation: "portrait" as const,
+      compress: true,
+    },
   };
 
   toast.info("جاري تجهيز وتحميل ملف الـ PDF بدقة عالية...");
-  html2pdf()
-    .from(element)
-    .set(opt)
-    .save()
-    .then(() => {
-      toast.success("تم تحميل الفاتورة بصيغة PDF بنجاح 📄");
-      if (scrollParent) scrollParent.scrollTop = originalScrollTop;
-    })
-    .catch((err: any) => {
-      console.error("PDF export error:", err);
-      toast.error("حدث خطأ أثناء حفظ ملف الـ PDF");
-      if (scrollParent) scrollParent.scrollTop = originalScrollTop;
-    });
+  try {
+    await html2pdf().from(clone).set(opt).save();
+    toast.success("تم تحميل الفاتورة بصيغة PDF بنجاح 📄");
+  } catch (err: any) {
+    console.error("PDF export error:", err);
+    toast.error("حدث خطأ أثناء حفظ ملف الـ PDF");
+  } finally {
+    host.remove();
+  }
 };

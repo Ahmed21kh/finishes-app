@@ -16,6 +16,64 @@ interface PrintTransactionInvoiceProps {
   client?: AccountStatement;
 }
 
+/**
+ * Chip with the label in its own span.
+ * A fixed-height table cell clips Arabic in html2canvas, so the text sits in
+ * normal line-height with equal padding and stays centered without being cut.
+ */
+function CenterBadge({
+  children,
+  bg,
+  color,
+  border = "none",
+  fontSize = 14,
+  padX = 16,
+  attr,
+  dir,
+}: {
+  children: React.ReactNode;
+  bg: string;
+  color: string;
+  border?: string;
+  fontSize?: number;
+  padX?: number;
+  attr: string;
+  dir?: "ltr" | "rtl";
+}) {
+  return (
+    <span
+      data-pdf-badge={attr}
+      dir={dir}
+      style={{
+        display: "inline-block",
+        width: "auto",
+        backgroundColor: bg,
+        border,
+        borderRadius: 8,
+        padding: `8px ${padX}px`,
+        textAlign: "center",
+        lineHeight: "normal",
+        verticalAlign: "middle",
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span
+        style={{
+          display: "inline-block",
+          color,
+          fontWeight: 800,
+          fontSize,
+          lineHeight: "normal",
+          textAlign: "center",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {children}
+      </span>
+    </span>
+  );
+}
+
 export const PrintTransactionInvoice = React.forwardRef<
   HTMLDivElement,
   PrintTransactionInvoiceProps
@@ -43,6 +101,8 @@ export const PrintTransactionInvoice = React.forwardRef<
         width: "100%",
         maxWidth: "800px",
         margin: "0 auto",
+        WebkitPrintColorAdjust: "exact",
+        printColorAdjust: "exact",
       }}
     >
       {/* Letterhead Header */}
@@ -51,7 +111,7 @@ export const PrintTransactionInvoice = React.forwardRef<
           {/* Company Brand */}
           <div className="text-right">
             <div className="flex items-center gap-3 mb-1">
-              <ShatabLogoIcon size={44} className="rounded-2xl shadow-md shrink-0" />
+              <ShatabLogoIcon size={44} className="rounded-2xl shrink-0" />
               <div>
                 <h1 className="text-2xl font-black text-slate-900 m-0 leading-tight">
                   شـــطــــب
@@ -67,25 +127,28 @@ export const PrintTransactionInvoice = React.forwardRef<
           </div>
 
           {/* Invoice Title & Stamp Badge */}
-          <div className="flex flex-col items-end text-left" dir="rtl">
-            <div
-              data-pdf-badge="title"
-              className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-slate-900 text-white font-black text-sm shadow-xs mb-2 leading-none"
-            >
-              <span className="inline-block leading-none pt-0.5">فاتورة معاملة</span>
+          <div className="flex flex-col items-center text-center" dir="rtl">
+            <div className="mb-2">
+              <CenterBadge attr="title" bg="#0f172a" color="#ffffff" fontSize={14} padX={16}>
+                فاتورة معاملة
+              </CenterBadge>
             </div>
-            <div className="text-xs text-slate-700 font-bold space-y-1.5 text-right" dir="rtl">
-              <div className="flex items-center gap-1.5 justify-end">
+            <div className="text-xs text-slate-700 font-bold space-y-1.5 text-center" dir="rtl">
+              <div className="flex items-center gap-1.5 justify-center">
                 <span className="text-slate-500 font-medium">رقم الفاتورة:</span>
-                <span
-                  data-pdf-badge="code"
-                  className="inline-flex items-center justify-center font-mono font-bold text-slate-900 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs leading-none"
+                <CenterBadge
+                  attr="code"
                   dir="ltr"
+                  bg="#f1f5f9"
+                  color="#0f172a"
+                  border="1px solid #e2e8f0"
+                  fontSize={12}
+                  padX={8}
                 >
                   #INV-{String(transaction?.code || 1000).padStart(4, "0")}
-                </span>
+                </CenterBadge>
               </div>
-              <div className="flex items-center gap-1.5 justify-end">
+              <div className="flex items-center gap-1.5 justify-center">
                 <span className="text-slate-500 font-medium">تاريخ الفاتورة:</span>
                 <span className="font-semibold text-slate-900" dir="ltr">
                   {dayjs(transaction?.date || new Date()).format("YYYY/MM/DD")}
@@ -97,26 +160,48 @@ export const PrintTransactionInvoice = React.forwardRef<
       </div>
 
       {/* Transaction Title Banner */}
-      <div className="mb-6 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <FileTextOutlined className="text-xl text-blue-600 shrink-0" />
-          <div>
-            <p className="text-[11px] font-bold text-slate-500 m-0 leading-tight mb-0.5">
-              اسم المعاملة / الخدمة
-            </p>
-            <h2 className="text-base font-black text-slate-900 m-0 leading-tight">
-              {transaction?.title || "معاملة تشطيب"}
-            </h2>
-          </div>
-        </div>
-        <div className="text-left shrink-0">
-          <span
-            data-pdf-badge="status"
-            className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300/50 leading-none"
-          >
-            <span className="inline-block leading-none pt-0.5">{transaction?.status || "قيد التنفيذ"}</span>
-          </span>
-        </div>
+      <div className="mb-6 bg-slate-50 border border-slate-200 rounded-2xl p-4">
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <tbody>
+            <tr>
+              <td valign="middle" style={{ verticalAlign: "middle", textAlign: "right" }}>
+                <div className="flex items-center gap-3">
+                  <FileTextOutlined className="text-xl text-blue-600 shrink-0" />
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-500 m-0 leading-tight mb-0.5">
+                      اسم المعاملة / الخدمة
+                    </p>
+                    <h2 className="text-base font-black text-slate-900 m-0 leading-tight">
+                      {transaction?.title || "معاملة تشطيب"}
+                    </h2>
+                  </div>
+                </div>
+              </td>
+              <td
+                valign="middle"
+                align="center"
+                style={{
+                  verticalAlign: "middle",
+                  textAlign: "center",
+                  width: 1,
+                  whiteSpace: "nowrap",
+                  paddingInlineStart: 16,
+                }}
+              >
+                <CenterBadge
+                  attr="status"
+                  bg="#f8fafc"
+                  color="#0f172a"
+                  border="1px solid #cbd5e1"
+                  fontSize={12}
+                  padX={14}
+                >
+                  {transaction?.status || "قيد التنفيذ"}
+                </CenterBadge>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {/* Client Information Box */}
@@ -125,32 +210,54 @@ export const PrintTransactionInvoice = React.forwardRef<
           <UserOutlined className="text-blue-500" />
           <span>بيانات العميل</span>
         </h3>
-        <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-700">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500">اسم العميل:</span>
-            <span className="font-bold text-slate-900">
-              {client?.clientName || "—"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500">رقم الهاتف:</span>
-            <span className="font-bold text-slate-900 font-mono" dir="ltr">
-              {client?.phoneNumber || "—"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500">العنوان:</span>
-            <span className="font-bold text-slate-900">
-              {client?.address || "—"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500">كود العميل:</span>
-            <span className="font-bold text-slate-900">
-              #{client?.code || "—"}
-            </span>
-          </div>
-        </div>
+        <table
+          className="w-full text-xs font-semibold text-slate-700"
+          style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}
+        >
+          <tbody>
+            <tr>
+              <td
+                align="right"
+                valign="middle"
+                style={{ width: "50%", textAlign: "right", verticalAlign: "middle", padding: "8px 6px" }}
+              >
+                <span className="text-slate-500">اسم العميل: </span>
+                <span className="font-bold text-slate-900">{client?.clientName || "—"}</span>
+              </td>
+              <td
+                align="right"
+                valign="middle"
+                style={{ width: "50%", textAlign: "right", verticalAlign: "middle", padding: "8px 6px" }}
+              >
+                <span className="text-slate-500">رقم الهاتف: </span>
+                <span
+                  className="font-bold text-slate-900"
+                  style={{ direction: "ltr", unicodeBidi: "isolate", display: "inline-block", verticalAlign: "middle" }}
+                >
+                  {client?.phoneNumber || "—"}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td
+                align="right"
+                valign="middle"
+                style={{ width: "50%", textAlign: "right", verticalAlign: "middle", padding: "8px 6px" }}
+              >
+                <span className="text-slate-500">العنوان: </span>
+                <span className="font-bold text-slate-900">{client?.address || "—"}</span>
+              </td>
+              <td
+                align="right"
+                valign="middle"
+                style={{ width: "50%", textAlign: "right", verticalAlign: "middle", padding: "8px 6px" }}
+              >
+                <span className="text-slate-500">كود العميل: </span>
+                <span className="font-bold text-slate-900">#{client?.code || "—"}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {/* Expenses & Costs Table (المصروفات والتكاليف) */}

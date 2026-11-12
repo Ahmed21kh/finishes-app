@@ -61,6 +61,14 @@
     break-inside: avoid !important;
   }
 
+  .print-container,
+  .print-container * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
   /* Prevent URL from appending after links */
   a[href]:after {
     content: "" !important;
